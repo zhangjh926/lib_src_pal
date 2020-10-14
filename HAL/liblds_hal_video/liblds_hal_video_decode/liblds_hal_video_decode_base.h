@@ -7,14 +7,46 @@
 extern "C"{
 #endif
 
+typedef enum   _LDS_VIDEO_DECODE_ErrorNo{
+	LDS_VIDEO_DECODE_OPEN_ERROR,
+	LDS_VIDEO_DECODE_INIT_ERROR,
+	LDS_VIDEO_DECODE_ERROR,
+}LDS_VIDEO_DECODE_ErrorNo;
+
+typedef enum
+{
+    LDS_VIDEOENCODE_TYPE_H264,
+    LDS_VIDEOENCODE_TYPE_H265,
+    LDS_VIDEOENCODE_TYPE_MJPEG,
+}LDS_VIDEOENCODE_TYPE;
+
+typedef enum
+{
+    LDS_VIDEOENCODE_TYPE_VBR,
+    LDS_VIDEOENCODE_TYPE_CBR,
+    LDS_VIDEOENCODE_TYPE_CVBR,
+}LDS_BITCTR_MODE;
+ 
+ typedef enum
+ {
+    LDS_FRAME_TYPE_IFRAME,
+    LDS_FRAME_TYPE_PFRAME,
+    LDS_FRAME_TYPE_BFRAME,
+    LDS_FRAME_TYPE_CFRAME,
+    LDS_FRAME_TYPE_DFRAME,
+ }LDS_FRAME_TYPE;
+
+
 typedef struct _video_param{
     unsigned int  width;        //video width
     unsigned int  height;       //video height
-    unsigned char frametype;    //Frame type,    I frame, P frame, B frame ... LDS_FRAME_TYPE
-    unsigned char encodetype;   //Encoding type,   0 H264, 1 H265, 2 MJPEG ... LDS_VIDEOENCODE_TYPE
-    unsigned char bitctlmode;   //Bit rate control method, 0 VBR, 1 CBR, 2 CVBR ... LDS_BITCTR_MODE
+    unsigned char frametype;    //Frame type,    I frame, P frame, B frame 
+    unsigned char encodetype;   //Encoding type,   0 H264, 1 H265, 2 MJPEG 
+    unsigned char bitctlmode;   //Bit rate control method, 0 VBR, 1 CBR, 2 CVBR
     unsigned char framerate;    //Frame rate
     unsigned int  bitrate;      //Bit rate, bps
+    unsigned int  gop;          //GOP
+    unsigned int  iframe_freq;  //I Frame Frequency
 }video_param;
 
 typedef struct _video_playback_buffer{
@@ -40,7 +72,8 @@ struct LDS_VIDEO_DECODE_OPERATION
 
 extern struct LDS_VIDEO_DECODE_OPERATION lds_hal_video_decoder;
 
-#ifdef __cplusplus
+#ifdef __cplusplus
+
 }
 #endif
 

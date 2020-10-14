@@ -211,7 +211,7 @@ static int lds_hal_gpio_stop( void)
     return 0;
 }
 
-static int lds_hal_gpio_init( void)
+static int lds_hal_gpio_init( void *param)
 {
     ctx = (struct LDS_GPIO_CTX*)malloc(sizeof(struct LDS_GPIO_CTX));
     return 0;

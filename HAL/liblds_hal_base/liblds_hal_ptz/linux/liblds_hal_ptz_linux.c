@@ -15,7 +15,7 @@ struct LDS_PTZ_CTX
 };
 
 /* Define variable  ----------------------------------------------------------*/
-struct LDS_PTZ_CTX *ctx = NULL;
+static struct LDS_PTZ_CTX *ctx = NULL;
 /* Define extern variable & function  ----------------------------------------*/
 
 /* Function prototype  -------------------------------------------------------*/
@@ -53,7 +53,7 @@ static int	lds_ptz_close(int dev_fd)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int	lds_ptz_init(void)
+static int	lds_ptz_init(void *param)
 {
     ctx = (struct LDS_PTZ_CTX *)malloc(sizeof(struct LDS_PTZ_CTX));
 	return 0;

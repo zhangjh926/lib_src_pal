@@ -7,6 +7,11 @@
 extern "C"{
 #endif
 
+typedef enum   _LDS_USB_UVC_ErrorNo{
+	LDS_USB_UVC_OPEN_ERROR,
+	LDS_USB_UVC_INIT_ERROR,
+	LDS_USB_UVC_START_ERROR,
+}LDS_USB_UVC_ErrorNo;
 
 typedef enum tagCTRL_USB_UVC
 {

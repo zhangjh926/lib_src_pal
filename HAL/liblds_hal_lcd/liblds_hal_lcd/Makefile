@@ -8,8 +8,9 @@ Q = @
 export Q
 
 LIBSDIR	 	:= $(TOPDIR)/
-LIB_INSTALL	:= $(LIBSDIR)/lib
-INC_INSTALL	:= $(LIBSDIR)/include
+LIB_INSTALL	:= $(LIBSDIR)/HAL/lib
+INC_INSTALL	:= $(LIBSDIR)/HAL/include
+OBJ_INSTALL := $(LIBSDIR)/HAL/obj
 
 # Build options
 INCLUDE += -I./ -I../../../include
@@ -47,12 +48,13 @@ $(TARGET): depend $(OBJS)
 	$(Q)$(AR) $(ARFLAGS) $(TARGET).a $(OBJS)
 	$(Q)$(CC) -shared -o $(TARGET).so $(OBJS)
 	install -m 755 -d $(LIB_INSTALL)
-	install -m 644 $(TARGET).a $(LIB_INSTALL)
-	install -m 644 $(TARGET).so $(LIB_INSTALL)
+	#install -m 644 $(TARGET).a $(LIB_INSTALL)
+	#install -m 644 $(TARGET).so $(LIB_INSTALL)
 	install -m 644 $(INC_FILE).h $(INC_INSTALL)
+	install -m 644 $(COBJS) $(CPPOBJS) $(OBJ_INSTALL)
 
 clean:
-	rm -f *.o *.so *.a *.bak .depend
+	rm -f linux/*.o rtos/*.o *.so *.a *.bak .depend
 
 distclean: clean
 	rm -f $(LIB_INSTALL)/$(TARGET).a

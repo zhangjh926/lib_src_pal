@@ -53,7 +53,7 @@ static int	lds_pwm_close(int dev_fd)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int	lds_pwm_init(void)
+static int	lds_pwm_init(void *param)
 {
     ctx = (struct LDS_PWM_CTX*)malloc(sizeof(struct LDS_PWM_CTX));
 	return 0;

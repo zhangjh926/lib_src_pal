@@ -7,6 +7,11 @@
 extern "C"{
 #endif
 
+typedef enum   _LDS_USB_DEVICE_ErrorNo{
+	LDS_USB_DEVICE_OPEN_ERROR,
+	LDS_USB_DEVICE_INIT_ERROR,
+	LDS_USB_DEVICE_START_ERROR,
+}LDS_USB_DEVICE_ErrorNo;
 
 typedef enum tagCTRL_USB_DEVICE
 {

@@ -7,6 +7,11 @@
 extern "C"{
 #endif
 
+typedef enum   _LDS_LVDS_ErrorNo{
+	LDS_LVDS_OPEN_ERROR,
+	LDS_LVDS_INIT_ERROR,
+	LDS_LVDS_START_ERROR,
+}LDS_LVDS_ErrorNo;
 
 typedef enum tagCTRL_LVDS
 {

@@ -7,6 +7,11 @@
 extern "C"{
 #endif
 
+typedef enum   _LDS_LCD_ErrorNo{
+	LDS_LCD_OPEN_ERROR,
+	LDS_LCD_INIT_ERROR,
+	LDS_LCD_START_ERROR,
+}LDS_LCD_ErrorNo;
 
 typedef enum tagCTRL_LCD
 {

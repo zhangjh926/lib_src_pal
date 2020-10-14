@@ -7,25 +7,45 @@
 extern "C"{
 #endif
 
+typedef enum   _LDS_SDCARD_ErrorNo{
+	LDS_SDCARD_OPEN_ERROR,
+	LDS_SDCARD_INIT_ERROR,
+	LDS_SDCARD_START_ERROR,
+}LDS_SDCARD_ErrorNo;
 
-typedef enum tagCTRL_SDCARD
+typedef enum _SDCardState{
+    SDCARD_FULL,
+    SDCARD_INSERT,
+    SDCARD_REMOVE,
+    SDCARD_WRITE_PROJECT,
+    SDCARD_NOT_FORMAT,
+    SDCARD_ERROR,
+}SDCardState;
+
+typedef enum _SDCardFsType
 {
-	LDS_CTRL_SDCARD_END,
-	LDS_CTRL_SDCARD_SET_PARAM,
-	LDS_CTRL_SDCARD_SET_OUTPUT,
-	LDS_CTRL_SDCARD_MAX
-}LDS_CTRL_SDCARD;
+    SDCARD_FS_TYPE_FAT16,
+    SDCARD_FS_TYPE_FAT32,
+    SDCARD_FS_TYPE_EXFAT,
+    SDCARD_FS_TYPE_NTFS,
+    SDCARD_FS_TYPE_EXT3,
+    SDCARD_FS_TYPE_EXT4,
+}SDCardFsType;
 
 struct LDS_SDCARD_OPERATION
 {
     struct  LDS_HAL_COMMON comm;    
 	const   char		*name;
 
-    int     (*ioctl)(LDS_CTRL_SDCARD, ...);
+    int         (*lds_hal_sdcard_get_total_space)(void);
+    int         (*lds_hal_sdcard_get_free_space)(void);
+    SDCardState (*lds_hal_sdcard_get_state)(void);
+    SDCardFsType(*lds_hal_sdcard_get_filesystem_type)(void);
+    int         (*lds_hal_sdcard_set_format)(SDCardFsType fs_type);
+    int         (*lds_hal_sdcard_fallocate)(int fd, int mode, unsigned long offset, unsigned long len);
 };
 
 extern struct LDS_SDCARD_OPERATION lds_hal_sdcard;
-
 
 #ifdef __cplusplus
 }

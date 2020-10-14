@@ -279,7 +279,7 @@ static int lds_led_close(int dev_fd)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_led_init(void)
+static int lds_led_init(void*param)
 {
     ctx = (struct LDS_LED_CTX*)malloc(sizeof(struct LDS_LED_CTX));
     return 0;

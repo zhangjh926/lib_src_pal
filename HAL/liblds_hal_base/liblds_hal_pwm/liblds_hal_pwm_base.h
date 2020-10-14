@@ -7,6 +7,11 @@ extern "C"{
 
 #include "lds_hal_common.h"
 /* Header file include --------------------------------------------------*/
+typedef enum   _LDS_PWM_ErrorNo{
+	LDS_PWM_OPEN_ERROR,
+	LDS_PWM_INIT_ERROR,
+	LDS_PWM_START_ERROR,
+}LDS_PWM_ErrorNo;
 
 /* Define  --------------------------------------------------------------*/
 typedef enum tagRTC_CTRL

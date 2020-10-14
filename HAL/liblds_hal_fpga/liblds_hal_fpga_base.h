@@ -7,6 +7,11 @@
 extern "C"{
 #endif
 
+typedef enum   _LDS_FPGA_ErrorNo{
+	LDS_FPGA_OPEN_ERROR,
+	LDS_FPGA_INIT_ERROR,
+	LDS_FPGA_START_ERROR,
+}LDS_FPGA_ErrorNo;
 
 typedef enum tagCTRL_FPGA
 {

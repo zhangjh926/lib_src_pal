@@ -54,7 +54,7 @@ static int lds_hal_adc_start(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_adc_init(void)
+static int lds_hal_adc_init(void* param)
 {
 	return 0;
 }

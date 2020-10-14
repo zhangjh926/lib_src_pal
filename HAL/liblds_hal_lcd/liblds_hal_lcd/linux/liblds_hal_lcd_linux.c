@@ -44,7 +44,7 @@ static int lds_hal_lcd_close(int dev_fd)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_lcd_init(void)
+static int lds_hal_lcd_init(void *param)
 {
     return 0;
 }

@@ -7,6 +7,11 @@
 extern "C"{
 #endif
 
+typedef enum   _LDS_POWER_ErrorNo{
+	LDS_POWER_OPEN_ERROR,
+	LDS_POWER_INIT_ERROR,
+	LDS_POWER_START_ERROR,
+}LDS_POWER_ErrorNo;
 
 typedef enum tagCTRL_POWER
 {

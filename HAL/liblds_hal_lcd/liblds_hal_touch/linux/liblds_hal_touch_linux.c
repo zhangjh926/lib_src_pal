@@ -44,7 +44,7 @@ static int lds_hal_touch_close(int dev_fd)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_touch_init(void)
+static int lds_hal_touch_init(void *param)
 {
     return 0;
 }

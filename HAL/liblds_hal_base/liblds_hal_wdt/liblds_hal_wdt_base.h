@@ -6,7 +6,11 @@
 extern "C"{
 #endif
 
-/* Header file include --------------------------------------------------*/
+typedef enum   _LDS_WDT_ErrorNo{
+	LDS_WDT_OPEN_ERROR,
+	LDS_WDT_INIT_ERROR,
+	LDS_WDT_START_ERROR,
+}LDS_WDT_ErrorNo;
 
 /* Define  --------------------------------------------------------------*/
 typedef enum tagWATCHDOG_CTRL

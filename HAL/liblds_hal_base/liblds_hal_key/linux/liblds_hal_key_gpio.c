@@ -42,7 +42,7 @@ struct LDS_KEY_CTX
 }; 
 
 /* Define variable  ----------------------------------------------------------*/
-struct LDS_KEY_CTX *ctx = NULL;
+static struct LDS_KEY_CTX *ctx = NULL;
 /* Define extern variable & function  ----------------------------------------*/
 static int s_key_val, s_long_key, s_long_cnt;
 
@@ -309,10 +309,11 @@ static int lds_key_gpio_close(int fd)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_key_gpio_init(void)
+static int lds_key_gpio_init(void *param)
 {
     ctx = (struct LDS_KEY_CTX *)malloc(sizeof(struct LDS_KEY_CTX));
-    return 0;
+    return 0;
+
 }
 
 /*******************************************************************************
@@ -341,7 +342,8 @@ static int lds_key_gpio_deinit(void)
 *******************************************************************************/
 static int lds_key_gpio_start(void)
 {
-    return 0;
+    return 0;
+
 }
 
 /*******************************************************************************

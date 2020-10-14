@@ -7,6 +7,11 @@
 extern "C"{
 #endif
 
+typedef enum   _LDS_CVBS_ErrorNo{
+	LDS_CVBS_OPEN_ERROR,
+	LDS_CVBS_INIT_ERROR,
+	LDS_CVBS_START_ERROR,
+}LDS_CVBS_ErrorNo;
 
 typedef enum tagCTRL_CVBS
 {

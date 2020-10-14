@@ -254,7 +254,7 @@ static int __set_hw_params( void )
 * lds_audio_speaker_Init()
 *
 *******************************************************************************/
-int lds_audio_speaker_init( void)
+int lds_audio_speaker_init( void *param)
 {
 	int err = 0;
 

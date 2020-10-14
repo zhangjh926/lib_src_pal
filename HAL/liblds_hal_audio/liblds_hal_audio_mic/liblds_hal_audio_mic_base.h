@@ -14,11 +14,19 @@ extern "C"{
 #include <stdint.h>
 #endif
 
+typedef enum   _LDS_AE_ErrorNo{
+	LDS_AUDIO_ENCODE_OPEN_ERROR,
+	LDS_AUDIO_ENCODE_INIT_ERROR,
+	LDS_AUDIO_ENCODE_START_ERROR,
+	LDS_AUDIO_ENCODE_SET_HW_ERROR,
+	LDS_AUDIO_ENCODE_SET_SW_ERROR,
+}LDS_AUDIO_ENCODE_ErrorNo;
+
 typedef struct _LDS_AE_STR
 {
-	const char*			device;
-	const char*			vol_selem;
-	const char*			vol_mute_selem;
+	const char*			device;         //audio device name
+	const char*			vol_selem;      //volume 
+	const char*			vol_mute_selem; // mute volume
 	
 	unsigned int 		pcm_format;
 	unsigned int 		sampling_rate;

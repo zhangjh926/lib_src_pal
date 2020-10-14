@@ -7,6 +7,12 @@
 extern "C"{
 #endif
 
+typedef enum   _LDS_ADC_ErrorNo{
+	LDS_ADC_OPEN_ERROR,
+	LDS_ADC_INIT_ERROR,
+	LDS_ADC_START_ERROR,
+}LDS_ADC_ErrorNo;
+
 typedef enum tagCTRL_ADC
 {
 	LDS_CTRL_ADC_END,

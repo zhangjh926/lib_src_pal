@@ -42,6 +42,11 @@ enum LDS_GPIO {
 	GPIO_MAX,
 };
 
+typedef enum   _LDS_GPIO_ErrorNo{
+	LDS_GPIO_OPEN_ERROR,
+	LDS_GPIO_INIT_ERROR,
+	LDS_GPIO_START_ERROR,
+}LDS_GPIO_ErrorNo;
 
 typedef enum tagGPIO_DIRECTION
 {

@@ -16,7 +16,7 @@ struct LDS_PIR_CTX
 };
 
 /* Define variable  ----------------------------------------------------------*/
-struct LDS_PIR_CTX *ctx = NULL;
+static struct LDS_PIR_CTX *ctx = NULL;
 /* Define extern variable & function  ----------------------------------------*/
 
 /* Function prototype  -------------------------------------------------------*/
@@ -78,7 +78,7 @@ static int lds_pir_stop(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int  lds_pir_init(void)
+static int  lds_pir_init(void *param)
 {
     ctx = (struct LDS_PIR_CTX*)malloc(sizeof(struct LDS_PIR_CTX));
     return 0;

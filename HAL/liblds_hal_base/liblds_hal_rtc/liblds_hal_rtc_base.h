@@ -6,7 +6,12 @@
 extern "C"{
 #endif
 
-/* Header file include --------------------------------------------------*/
+typedef enum   _LDS_RTC_ErrorNo{
+	LDS_RTC_OPEN_ERROR,
+	LDS_RTC_INIT_ERROR,
+	LDS_RTC_START_ERROR,
+}LDS_RTC_ErrorNo;
+
 /* Define  --------------------------------------------------------------*/
 typedef enum tagRTC_CTRL
 {

@@ -6,6 +6,12 @@
 extern "C"{
 #endif
 
+typedef enum   _LDS_KEY_ErrorNo{
+	LDS_KEY_OPEN_ERROR,
+	LDS_KEY_INIT_ERROR,
+	LDS_KEY_START_ERROR,
+}LDS_KEY_ErrorNo;
+
 typedef enum tagKEY_CTRL
 {
 	LDS_CTRL_KEY_END,

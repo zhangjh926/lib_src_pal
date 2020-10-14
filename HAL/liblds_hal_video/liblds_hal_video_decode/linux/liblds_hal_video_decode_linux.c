@@ -5,37 +5,92 @@
 
 #include "liblds_hal_video_decode_base.h"
 
+/* Define  -------------------------------------------------------------------*/
+/* Define variable  ----------------------------------------------------------*/
 
+/* Define extern variable & function  ----------------------------------------*/
+
+
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
 static int lds_hal_video_decoder_open(char *dev_name)
 {
     return 0;
 }
 
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
 static int lds_hal_video_decoder_close(int dev_fd)
 {
     return 0;
 }
 
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
 static int lds_hal_video_decoder_start(void)
 {
     return 0;
 }
 
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
 static int lds_hal_video_decoder_stop(void)
 {
     return 0;
 }
 
-static int lds_hal_video_decoder_init(void)
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int lds_hal_video_decoder_init(void *param)
 {
     return 0;
 }
 
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
 static int lds_hal_video_decoder_deinit(void)
 {
     return 0;
 }
 
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
 static int lds_hal_video_playback_callback(set_playback_video_frame capture_buffer)
 {
     return 0;

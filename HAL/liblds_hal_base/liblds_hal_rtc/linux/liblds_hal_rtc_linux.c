@@ -135,7 +135,7 @@ static int lds_rtc_close( int dev_fd )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_rtc_init( void )
+static int lds_rtc_init( void *param)
 {
     ctx = (struct LDS_RTC_CTX *)malloc(sizeof(struct LDS_RTC_CTX));
 	return 0;

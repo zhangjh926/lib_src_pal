@@ -7,6 +7,11 @@
 extern "C"{
 #endif
 
+typedef enum   _LDS_HDMI_ErrorNo{
+	LDS_HDMI_OPEN_ERROR,
+	LDS_HDMI_INIT_ERROR,
+	LDS_HDMI_START_ERROR,
+}LDS_HDMI_ErrorNo;
 
 typedef enum tagCTRL_HDMI
 {

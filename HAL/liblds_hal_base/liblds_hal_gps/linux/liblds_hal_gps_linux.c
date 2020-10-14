@@ -47,9 +47,9 @@ struct LDS_GPS_CTX
 /* Define variable  ----------------------------------------------------------*/
 
 /* Define extern variable & function  ----------------------------------------*/
-int	gps_thread_start;
+static int	gps_thread_start;
 
-struct LDS_GPS_CTX *ctx = NULL;
+static struct LDS_GPS_CTX *ctx = NULL;
 /* Function prototype  -------------------------------------------------------*/
 
 /*******************************************************************************
@@ -537,7 +537,7 @@ static int lds_gps_stop(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_gps_init(void)
+static int lds_gps_init(void *param)
 {
     ctx = (struct LDS_GPS_CTX*)malloc( sizeof(struct LDS_GPS_CTX) );
     return 0;

@@ -11,7 +11,7 @@ export BUILD_VERBOSE Q
 ifndef PROJ_HOME
 
 PROJ_HOME	= `pwd`
-TOP			= ../../
+TOP			= ../
 
 CC		=	$(CROSS_TOOL)gcc
 LD		=	$(CROSS_TOOL)ld
@@ -79,9 +79,9 @@ endif
 install:	$(TARGET)
 	$(CP)		$(TARGET) $(TARGET_DIR)
 	$(CP)		$(HEADERS) $(TOP)/include
-	@echo "Install.......	[OK]"
+	@echo 		"Install.......	[OK]"
 
 clean:
-	$(RM)		$(OBJECTS) $(TARGET) *~ tags
+	$(RM)		$(OBJECTS) $(TARGET) *~ tags *.so *.a *.dpend
 	$(ECHO)		"Cleaning......   [OK]"
 

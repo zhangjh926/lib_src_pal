@@ -32,7 +32,7 @@ struct LDS_I2C_CTX
 /* Define variable  ----------------------------------------------------------*/
 
 /* Define extern variable & function  ----------------------------------------*/
-struct LDS_I2C_CTX *ctx = NULL;
+static struct LDS_I2C_CTX *ctx = NULL;
 /* Function prototype  -------------------------------------------------------*/
 
 /* Function implementation  --------------------------------------------------*/
@@ -81,10 +81,11 @@ static int lds_i2c_close( int dev_fd )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_i2c_init(void)
+static int lds_i2c_init(void *param)
 {
     ctx = (struct LDS_I2C_CTX *)malloc(sizeof(struct LDS_I2C_CTX));
-    return 0;
+    return 0;
+
 }
 
 /*******************************************************************************
@@ -112,7 +113,8 @@ static int lds_i2c_deinit(void)
 *******************************************************************************/
 static int lds_i2c_start(void)
 {
-    return 0;
+    return 0;
+
 }
 
 /*******************************************************************************

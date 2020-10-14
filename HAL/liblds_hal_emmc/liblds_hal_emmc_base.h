@@ -7,6 +7,11 @@
 extern "C"{
 #endif
 
+typedef enum   _LDS_EMMC_ErrorNo{
+	LDS_EMMC_OPEN_ERROR,
+	LDS_EMMC_INIT_ERROR,
+	LDS_EMMC_START_ERROR,
+}LDS_EMMC_ErrorNo;
 
 typedef enum tagCTRL_EMMC
 {

@@ -7,6 +7,11 @@
 extern "C"{
 #endif
 
+typedef enum   _LDS_GPU_ErrorNo{
+	LDS_GPU_OPEN_ERROR,
+	LDS_GPU_INIT_ERROR,
+	LDS_GPU_START_ERROR,
+}LDS_GPU_ErrorNo;
 
 typedef enum tagCTRL_GPU
 {

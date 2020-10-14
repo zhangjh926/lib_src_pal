@@ -7,6 +7,11 @@
 extern "C"{
 #endif
 
+typedef enum   _LDS_TOUCH_ErrorNo{
+	LDS_TOUCH_OPEN_ERROR,
+	LDS_TOUCH_INIT_ERROR,
+	LDS_TOUCH_START_ERROR,
+}LDS_TOUCH_ErrorNo;
 
 typedef enum tagCTRL_TOUCH
 {

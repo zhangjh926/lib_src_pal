@@ -26,9 +26,9 @@ ECHO	=	@echo
 CTAG	=	@ctags -R
 
 
-TARGET_DIR = $(TOP)/lib/
+TARGET_DIR = $(TOP)/HAL/lib/
 INCPATH   = -I./
-INCPATH  += -I$(TOP)/include
+INCPATH  += -I$(TOP)/HAL/include
 INCPATH  += -I../../
 
 $(warning $(INCPATH))
@@ -81,13 +81,14 @@ endif
 	$(Q)$(CC) 	-shared -o $(TARGET).so $(OBJECTS)
 
 install:	$(TARGET)
-	$(CP)		$(TARGET).a $(TARGET_DIR)
+	#$(CP)		$(TARGET).a $(TARGET_DIR)
 	$(STRIP)	$(TARGET).so
-	$(CP)		$(TARGET).so $(TARGET_DIR)
-	$(CP)		$(HEADERS) $(TOP)/include
+	#$(CP)		$(TARGET).so $(TARGET_DIR)
+	$(CP)		$(HEADERS) $(TOP)/HAL/include
+	$(CP)		$(OBJECTS) $(TOP)/HAL/obj
 	@echo 		"Install.......	[OK]"
 
 clean:
-	$(RM)		$(OBJECTS) $(TARGET) *~ tags
+	$(RM)		$(OBJECTS) $(TARGET) *~ tags *.so *.a *.dpend
 	$(ECHO)		"Cleaning......   [OK]"
 

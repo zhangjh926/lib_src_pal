@@ -245,7 +245,7 @@ int lds_wdt_stop( void )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-int lds_wdt_init( void )
+int lds_wdt_init( void *param)
 {
     ctx = (struct LDS_WATCHDOG_CTX *)malloc(sizeof(struct LDS_WATCHDOG_CTX));
 	return 0;

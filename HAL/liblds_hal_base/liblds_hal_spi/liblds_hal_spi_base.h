@@ -6,7 +6,11 @@
 extern "C"{
 #endif
 
-/* Header file include --------------------------------------------------*/
+typedef enum   _LDS_SPI_ErrorNo{
+	LDS_SPI_OPEN_ERROR,
+	LDS_SPI_INIT_ERROR,
+	LDS_SPI_START_ERROR,
+}LDS_SPI_ErrorNo;
 
 /* Define  --------------------------------------------------------------*/
 typedef enum tagSPI_CTRL

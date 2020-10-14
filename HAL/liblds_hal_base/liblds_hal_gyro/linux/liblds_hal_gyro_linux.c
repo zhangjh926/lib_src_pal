@@ -57,7 +57,7 @@ static int lds_gyro_stop(void)
     return 0;
 }
 
-static int lds_gyro_init(void)
+static int lds_gyro_init(void *param)
 {
     ctx = (struct LDS_GYRO_CTX*)malloc(sizeof(struct LDS_GYRO_CTX));
     return 0;

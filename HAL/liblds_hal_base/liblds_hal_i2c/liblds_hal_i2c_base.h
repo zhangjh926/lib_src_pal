@@ -6,6 +6,12 @@
 extern "C"{
 #endif
 
+typedef enum   _LDS_I2C_ErrorNo{
+	LDS_I2C_OPEN_ERROR,
+	LDS_I2C_INIT_ERROR,
+	LDS_I2C_START_ERROR,
+}LDS_I2C_ErrorNo;
+
 typedef enum tagCTRL_I2C
 {
 	LDS_CTRL_I2C_END,

@@ -185,7 +185,7 @@ static int __set_hw_params( void )
 * lds_ae_init()
 *
 *******************************************************************************/
-static int lds_ae_init( void )
+static int lds_ae_init( void *param)
 {
      int err = 0;
 

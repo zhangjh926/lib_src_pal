@@ -9,6 +9,12 @@ extern "C"{
 
 /* Header file include --------------------------------------------------*/
 
+typedef enum   _LDS_GYRO_ErrorNo{
+	LDS_GYRO_OPEN_ERROR,
+	LDS_GYRO_INIT_ERROR,
+	LDS_GYRO_START_ERROR,
+}LDS_DSP_ErrorNo;
+
 /* Define  --------------------------------------------------------------*/
 typedef enum tagRTC_CTRL
 {

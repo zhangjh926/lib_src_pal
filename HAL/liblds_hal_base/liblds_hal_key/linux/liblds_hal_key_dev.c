@@ -27,7 +27,7 @@ struct LDS_KEY_CTX
 }; 
 
 /* Define variable  ----------------------------------------------------------*/
-struct LDS_KEY_CTX *ctx;
+static struct LDS_KEY_CTX *ctx;
 /* Define extern variable & function  ----------------------------------------*/
 
 /* Function prototype  -------------------------------------------------------*/
@@ -275,7 +275,7 @@ static int lds_key_dev_stop(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_key_dev_init(void)
+static int lds_key_dev_init(void *param)
 {
     ctx = (struct LDS_KEY_CTX*)malloc(sizeof(struct LDS_KEY_CTX));
     return 0;

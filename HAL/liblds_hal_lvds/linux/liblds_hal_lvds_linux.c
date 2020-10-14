@@ -44,7 +44,7 @@ static int lds_hal_lvds_close(int dev_fd)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_lvds_init(void)
+static int lds_hal_lvds_init(void *param)
 {
     return 0;
 }

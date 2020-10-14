@@ -5,7 +5,12 @@
 #ifdef __cplusplus
 extern "C"{
 #endif
-/* Header file include --------------------------------------------------*/
+
+typedef enum   _LDS_UART_ErrorNo{
+	LDS_UART_OPEN_ERROR,
+	LDS_UART_INIT_ERROR,
+	LDS_UART_START_ERROR,
+}LDS_UART_ErrorNo;
 
 /* Define  --------------------------------------------------------------*/
 enum LDS_RS232_BAUD

@@ -8,6 +8,12 @@ extern "C"{
 
 /* Header file include --------------------------------------------------*/
 
+typedef enum   _LDS_PTZ_ErrorNo{
+	LDS_PTZ_OPEN_ERROR,
+	LDS_PTZ_INIT_ERROR,
+	LDS_PTZ_START_ERROR,
+}LDS_PTZ_ErrorNo;
+
 /* Define  --------------------------------------------------------------*/
 typedef enum tagRTC_CTRL
 {

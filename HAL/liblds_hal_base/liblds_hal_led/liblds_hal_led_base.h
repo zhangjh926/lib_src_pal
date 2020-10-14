@@ -8,6 +8,11 @@ extern "C"{
 #endif
 
 /* Header file include --------------------------------------------------*/
+typedef enum   _LDS_LED_ErrorNo{
+	LDS_LED_OPEN_ERROR,
+	LDS_LED_INIT_ERROR,
+	LDS_LED_START_ERROR,
+}LDS_LED_ErrorNo;
 
 /* Define  --------------------------------------------------------------*/
 typedef enum tagLED_CTRL

@@ -7,6 +7,11 @@
 extern "C"{
 #endif
 
+typedef enum   _LDS_DSP_ErrorNo{
+	LDS_DSP_OPEN_ERROR,
+	LDS_DSP_INIT_ERROR,
+	LDS_DSP_START_ERROR,
+}LDS_DSP_ErrorNo;
 
 typedef enum tagCTRL_DSP
 {

@@ -8,6 +8,12 @@ extern "C"{
 
 /* Header file include --------------------------------------------------*/
 
+typedef enum   _LDS_PIR_ErrorNo{
+	LDS_PIR_OPEN_ERROR,
+	LDS_PIR_INIT_ERROR,
+	LDS_PIR_START_ERROR,
+}LDS_PIR_ErrorNo;
+
 /* Define  --------------------------------------------------------------*/
 typedef enum tagPIR_CTRL
 {

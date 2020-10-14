@@ -53,7 +53,7 @@ static int	lds_spi_close(int dev_fd)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int	lds_spi_init(void)
+static int	lds_spi_init(void *param)
 {
     ctx = (struct LDS_SPI_CTX*)malloc(sizeof(struct LDS_SPI_CTX));
 	return 0;

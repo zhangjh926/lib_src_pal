@@ -107,7 +107,7 @@ int lds_rs232_close( int dev_fd )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-int lds_rs232_init( void )
+int lds_rs232_init( void *param)
 {
 	return 0;
 }

@@ -8,6 +8,12 @@ extern "C"{
 #endif
 /* Header file include --------------------------------------------------*/
 
+typedef enum   _LDS_GPS_ErrorNo{
+	LDS_GPS_OPEN_ERROR,
+	LDS_GPS_INIT_ERROR,
+	LDS_GPS_START_ERROR,
+}LDS_GPS_ErrorNo;
+
 /* Define  --------------------------------------------------------------*/
 typedef enum tagLDS_GPS_STATUS
 {

@@ -22,11 +22,18 @@ extern "C"{
 /********************************************************************************
 *                              ENUMERATION
 *********************************************************************************/
-
+typedef enum   _LDS_AD_ErrorNo{
+	LDS_AUDIO_DECODE_OPEN_ERROR,
+	LDS_AUDIO_DECODE_INIT_ERROR,
+	LDS_AUDIO_DECODE_START_ERROR,
+	LDS_AUDIO_DECODE_SET_HW_ERROR,
+	LDS_AUDIO_DECODE_SET_SW_ERROR,
+}LDS_AUDIO_DECODE_ErrorNo;
 
 /********************************************************************************
 *                              STRUCTURE-external
 *********************************************************************************/
+
 typedef struct _LDS_AD_STR
 {
 	const char*			device;
@@ -58,7 +65,8 @@ typedef struct _LDS_AD_STR
 *                             EXTERN FUNCTIONS
 *********************************************************************************/
 
-struct LDS_AUDIO_SPEAKER_OPERATION{
+struct LDS_AUDIO_SPEAKER_OPERATION{
+
     struct LDS_HAL_COMMON comm;
     const char *name;
     
