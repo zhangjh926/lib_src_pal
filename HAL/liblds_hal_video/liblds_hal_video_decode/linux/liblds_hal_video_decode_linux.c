@@ -6,8 +6,12 @@
 #include "liblds_hal_video_decode_base.h"
 
 /* Define  -------------------------------------------------------------------*/
-/* Define variable  ----------------------------------------------------------*/
+struct LDS_VIDEO_DECODE_CONTEXT{
+    LDS_VIDEO_DECODE_ErrorNo curr_state;
+};
 
+/* Define variable  ----------------------------------------------------------*/
+static struct LDS_VIDEO_DECODE_CONTEXT ctx;
 /* Define extern variable & function  ----------------------------------------*/
 
 
@@ -91,7 +95,19 @@ static int lds_hal_video_decoder_deinit(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_video_playback_callback(set_playback_video_frame capture_buffer)
+static int lds_hal_video_decoder_get_error(void)
+{
+    return ctx.curr_state;
+}
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int lds_hal_video_playback_callback(SET_PLAYBACK_VIDEO_FRAME capture_buffer)
 {
     return 0;
 }
@@ -105,6 +121,7 @@ struct LDS_VIDEO_DECODE_OPERATION lds_hal_video_decoder = {
     .comm.lds_hal_stop      = lds_hal_video_decoder_stop,
     .comm.lds_hal_init      = lds_hal_video_decoder_init,
     .comm.lds_hal_deinit    = lds_hal_video_decoder_deinit,
+    .comm.lds_hal_get_error = lds_hal_video_decoder_get_error,
     .set_video_playback_callback = lds_hal_video_playback_callback,
 };
 

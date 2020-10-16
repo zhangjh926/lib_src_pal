@@ -13,8 +13,9 @@
 /* Define  -------------------------------------------------------------------*/
 struct LDS_LED_CTX
 {
-	void 	*ctx;
-	int		blink_time;
+	void 			*ctx;
+	int				blink_time;
+	LDS_CTRL_LED	curr_err_state;
 };
 
 #define SYSFS_LED_PATH			"/sys/class/leds"
@@ -22,7 +23,7 @@ struct LDS_LED_CTX
 static int active_low_set = 0;
 
 /* Define variable  ----------------------------------------------------------*/
-struct LDS_LED_CTX *ctx;
+static struct LDS_LED_CTX *ctx = NULL;
 /* Define extern variable & function  ----------------------------------------*/
 
 /* Function prototype  -------------------------------------------------------*/
@@ -34,8 +35,8 @@ struct LDS_LED_CTX *ctx;
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_led_blink(void* ctx_t, int pin_num)
-{	
+static int lds_hal_led_blink(void* ctx_t, int pin_num)
+{
 	struct LDS_LED_CTX *ctx;
 
 	if( ctx_t == NULL )
@@ -135,7 +136,7 @@ static int lds_led_blink(void* ctx_t, int pin_num)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_led_on(int pin_num)
+static int lds_hal_led_on(int pin_num)
 {
 	int fd = 0; 
 	int len = 0;
@@ -199,7 +200,7 @@ static int lds_led_on(int pin_num)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_led_off(int pin_num)
+static int lds_hal_led_off(int pin_num)
 {
 	int fd = 0; 
 	int len = 0;
@@ -251,7 +252,7 @@ static int lds_led_off(int pin_num)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_led_open(char *dev_name)
+static int lds_hal_led_open(char *dev_name)
 {	
 	memset( ctx, 0, sizeof(struct LDS_LED_CTX));
 	
@@ -265,7 +266,7 @@ static int lds_led_open(char *dev_name)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_led_close(int dev_fd)
+static int lds_hal_led_close(int dev_fd)
 {
     close(dev_fd);
 	return 0;
@@ -279,7 +280,7 @@ static int lds_led_close(int dev_fd)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_led_init(void*param)
+static int lds_hal_led_init(void*param)
 {
     ctx = (struct LDS_LED_CTX*)malloc(sizeof(struct LDS_LED_CTX));
     return 0;
@@ -292,7 +293,7 @@ static int lds_led_init(void*param)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_led_deinit(void)
+static int lds_hal_led_deinit(void)
 {
     if(ctx){
         free(ctx);
@@ -309,7 +310,7 @@ static int lds_led_deinit(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_led_start(void)
+static int lds_hal_led_start(void)
 {
     return 0;
 }
@@ -321,7 +322,7 @@ static int lds_led_start(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_led_stop(void)
+static int lds_hal_led_stop(void)
 {
     return 0;
 }
@@ -333,10 +334,11 @@ static int lds_led_stop(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static unsigned int lds_led_read(unsigned char *data, unsigned int size)
+static unsigned int lds_hal_led_read(unsigned char *data, unsigned int size)
 {
     return 0;
 }
+
 /*******************************************************************************
 *	Description		:
 *	Argurments		:
@@ -344,10 +346,11 @@ static unsigned int lds_led_read(unsigned char *data, unsigned int size)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static unsigned int lds_led_write(unsigned char *data, unsigned int size)
+static unsigned int lds_hal_led_write(unsigned char *data, unsigned int size)
 {
 	return 0;
 }
+
 /*******************************************************************************
 *	Description		:
 *	Argurments		:
@@ -355,7 +358,19 @@ static unsigned int lds_led_write(unsigned char *data, unsigned int size)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_led_control(LDS_CTRL_LED type, ...)
+static int 			lds_hal_led_get_error(void)
+{
+	return ctx->curr_err_state;
+}
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int lds_hal_led_control(LDS_CTRL_LED type, ...)
 {
 	/* check maxctrl */
 	if (type >= LDS_CTRL_LED_MAX)
@@ -373,13 +388,13 @@ static int lds_led_control(LDS_CTRL_LED type, ...)
 		{
 			case LDS_CTRL_LED_ON:{
 					int param = va_arg(ctrl, int);
-					lds_led_on(param);
+					lds_hal_led_on(param);
 				}
 				break;
 	
 			case LDS_CTRL_LED_OFF:{
 					int param = va_arg(ctrl, int);
-					lds_led_off(param);
+					lds_hal_led_off(param);
 				}
 				break;
 			case LDS_CTRL_LED_SET_BLINK_TIME:{
@@ -389,7 +404,7 @@ static int lds_led_control(LDS_CTRL_LED type, ...)
 				break;
 			case LDS_CTRL_LED_BLINK:{
 					int param = va_arg(ctrl, int);	
-					lds_led_blink(ctx, param);
+					lds_hal_led_blink(ctx, param);
 				}
 				break;
 			case LDS_CTRL_LED_ACTIVELOW_SET:{
@@ -412,15 +427,16 @@ static int lds_led_control(LDS_CTRL_LED type, ...)
 	return 0;
 }
 struct LDS_LED_OPERATION lds_hal_led = {
-		.name		    = "lds_hal_led",
-		.ctxsize		= sizeof(struct LDS_LED_CTX),
-		.maxctrl		= LDS_CTRL_LED_MAX,
+		.name		    		= "lds_hal_led",
+		.ctxsize				= sizeof(struct LDS_LED_CTX),
+		.maxctrl				= LDS_CTRL_LED_MAX,
 
-		.comm.lds_hal_open	 = lds_led_open,
-		.comm.lds_hal_close	 = lds_led_close,
-		.comm.lds_hal_start  = lds_led_start,
-		.comm.lds_hal_stop   = lds_led_stop,
-		.comm.lds_hal_init   = lds_led_init,
-		.comm.lds_hal_deinit = lds_led_deinit,
-		.ioctl		         = lds_led_control,
+		.comm.lds_hal_open	 	= lds_hal_led_open,
+		.comm.lds_hal_close	 	= lds_hal_led_close,
+		.comm.lds_hal_start  	= lds_hal_led_start,
+		.comm.lds_hal_stop   	= lds_hal_led_stop,
+		.comm.lds_hal_init   	= lds_hal_led_init,
+		.comm.lds_hal_deinit 	= lds_hal_led_deinit,
+		.comm.lds_hal_get_error	= lds_hal_led_get_error,
+		.ioctl		         	= lds_hal_led_control,
 };

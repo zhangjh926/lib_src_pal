@@ -42,6 +42,7 @@ struct LDS_GPS_CTX
 	int					intaval;
 	NC_GPS_MESG 		gps_mesg;
 	NC_GPS_GPRMC		gps_rmc;
+	LDS_GPS_ErrorNo		curr_err_state;
 };
 
 /* Define variable  ----------------------------------------------------------*/
@@ -88,7 +89,7 @@ float ConvertKnotToSpeedometer( float speed, int speed_mode )
 *	Modify			: 
 *	warning			: 
 *******************************************************************************/
-static void lds_dump_gprmc( NC_GPS_GPRMC s_gps_info )
+static void lds_hal_gps_dump_gprmc( NC_GPS_GPRMC s_gps_info )
 {
 	printf("gprmc : time=%4d/%2d/%2d %2d:%2d:%2d  lati[deg=%f, dir=%d], longi[deg=%f,dir=%d], speed=%f\n",
 					  	s_gps_info.date_yy, s_gps_info.date_mm, s_gps_info.date_dd, s_gps_info.utc_hh, s_gps_info.utc_mm, s_gps_info.utc_ss,
@@ -103,7 +104,7 @@ static void lds_dump_gprmc( NC_GPS_GPRMC s_gps_info )
 *	Modify			: 
 *	warning			: 
 *******************************************************************************/
-static int lds_gps_check_checksum( unsigned char *data,  unsigned char checksum)
+static int lds_hal_gps_check_checksum( unsigned char *data,  unsigned char checksum)
 {
 	 unsigned char	result = 0;
 
@@ -123,7 +124,7 @@ static int lds_gps_check_checksum( unsigned char *data,  unsigned char checksum)
 *	Modify			: 
 *	warning			: 
 *******************************************************************************/
-static int lds_gps_parse_mesg(unsigned char *data, NC_GPS_MESG *gps_mesg)
+static int lds_hal_gps_parse_mesg(unsigned char *data, NC_GPS_MESG *gps_mesg)
 {
 	int		ret = -1;
 	unsigned char	data_idx = 0;
@@ -160,7 +161,7 @@ static int lds_gps_parse_mesg(unsigned char *data, NC_GPS_MESG *gps_mesg)
 *	Modify			: 
 *	warning			: 
 *******************************************************************************/
-static int lds_gps_process(unsigned char data, NC_GPS_MESG *p_gps_msg)
+static int lds_hal_gps_process(unsigned char data, NC_GPS_MESG *p_gps_msg)
 {
 	static unsigned char	msg_idx = 0; // 0: none, 1: message, 2: checksum
 	static unsigned char	buf_idx = 0;
@@ -207,10 +208,10 @@ static int lds_gps_process(unsigned char data, NC_GPS_MESG *p_gps_msg)
 				checksum = strtol( (char*)checksum_buf, &end, 16 );
 				msg_idx = 0;
 
-				if( lds_gps_check_checksum(buf, checksum) == 0 ) // Checksum
+				if( lds_hal_gps_check_checksum(buf, checksum) == 0 ) // Checksum
 //				if( 1 )
 				{
-					ret = lds_gps_parse_mesg( buf, p_gps_msg );
+					ret = lds_hal_gps_parse_mesg( buf, p_gps_msg );
 				}
 			}
 			break;
@@ -226,7 +227,7 @@ static int lds_gps_process(unsigned char data, NC_GPS_MESG *p_gps_msg)
 *	Modify			: 
 *	warning			: 
 *******************************************************************************/
-static int lds_nmea_gprmc(NC_GPS_GPRMC *gps_rmc, NC_GPS_MESG *gps_mesg)
+static int lds_hal_gps_nmea_gprmc(NC_GPS_GPRMC *gps_rmc, NC_GPS_MESG *gps_mesg)
 {
 	int		ret = -1;
 	int		i;
@@ -302,7 +303,7 @@ static int lds_nmea_gprmc(NC_GPS_GPRMC *gps_rmc, NC_GPS_MESG *gps_mesg)
 *	Modify			: 
 *	warning			: 
 *******************************************************************************/
-static int lds_gps_ParseData( char *gps_data, void* ctx_t )
+static int lds_hal_gps_ParseData( char *gps_data, void* ctx_t )
 {
 
 	struct LDS_GPS_CTX *ctx;
@@ -312,11 +313,11 @@ static int lds_gps_ParseData( char *gps_data, void* ctx_t )
 		ctx = ctx_t;
 	do
 	{
-		if( lds_gps_process(*gps_data, &ctx->gps_mesg) == 0 )
+		if( lds_hal_gps_process(*gps_data, &ctx->gps_mesg) == 0 )
 		{
 			if( strcmp((const char*)ctx->gps_mesg.data, "GPRMC") == 0 )
 			{
-				if( lds_nmea_gprmc(&ctx->gps_rmc, &ctx->gps_mesg) == 0 )
+				if( lds_hal_gps_nmea_gprmc(&ctx->gps_rmc, &ctx->gps_mesg) == 0 )
 				{
 //					nca_dump_gprmc( ctx->gps_rmc );
 				}
@@ -340,7 +341,7 @@ static int lds_gps_ParseData( char *gps_data, void* ctx_t )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_gps_DataPut( char *gps_data, void *ctx_t )
+static int lds_hal_gps_DataPut( char *gps_data, void *ctx_t )
 {
 	struct LDS_GPS_CTX *ctx;
 	if( ctx_t == NULL )
@@ -353,7 +354,7 @@ static int lds_gps_DataPut( char *gps_data, void *ctx_t )
 		return -1;
 	}
 
-	return lds_gps_ParseData( gps_data , ctx);
+	return lds_hal_gps_ParseData( gps_data , ctx);
 }
 
 /*******************************************************************************
@@ -365,9 +366,8 @@ static int lds_gps_DataPut( char *gps_data, void *ctx_t )
 *******************************************************************************/
 static void *t_gps_monitoring(void *ctx_t)
 {
-
-	int			ret = 0;
-	int			status = 0;
+	int				ret = 0;
+	int				status = 0;
 	char			*gprmc_start;
 	char			*gprmc_end;
 
@@ -400,7 +400,7 @@ static void *t_gps_monitoring(void *ctx_t)
 		{
 			*gprmc_end = '\0';
 
-			lds_gps_DataPut(gprmc_start, ctx);
+			lds_hal_gps_DataPut(gprmc_start, ctx);
 //			nca_gps_DataPut( "$GPRMC,055138.00,A,3729.22275,N,12701.99313,E,4.298,,281111,,,A*7C,A*542", ctx);
 
 			if(ctx->gps_rmc.receive_ok)
@@ -426,7 +426,7 @@ END:
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_gps_monitoring_open(void *ctx_t)
+static int lds_hal_gps_monitoring_open(void *ctx_t)
 {
 	struct LDS_GPS_CTX *ctx;
 	if( ctx_t == NULL )
@@ -441,6 +441,7 @@ static int lds_gps_monitoring_open(void *ctx_t)
 	}
 	return 0;
 }
+
 /*******************************************************************************
 *	Description		:
 *	Argurments		:
@@ -448,7 +449,7 @@ static int lds_gps_monitoring_open(void *ctx_t)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_gps_device_open(void * ctx_t)
+static int lds_hal_gps_device_open(void * ctx_t)
 {
 	struct LDS_GPS_CTX *ctx;
 
@@ -482,12 +483,12 @@ static int lds_gps_device_open(void * ctx_t)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_gps_open(char *dev_name)
+static int lds_hal_gps_open(char *dev_name)
 {
 	memset( ctx, 0, sizeof(struct LDS_GPS_CTX));
 
 	gps_thread_start = 0;
-	lds_gps_device_open(ctx);
+	lds_hal_gps_device_open(ctx);
 	return 0;
 }
 
@@ -498,7 +499,7 @@ static int lds_gps_open(char *dev_name)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_gps_close( int dev_fd)
+static int lds_hal_gps_close( int dev_fd)
 {
 	lds_hal_rs232.comm.lds_hal_close(dev_fd);
     
@@ -512,7 +513,7 @@ static int lds_gps_close( int dev_fd)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_gps_start(void)
+static int lds_hal_gps_start(void)
 {
     return 0;
 }
@@ -524,7 +525,7 @@ static int lds_gps_start(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_gps_stop(void)
+static int lds_hal_gps_stop(void)
 {
     return 0;
 }
@@ -537,7 +538,7 @@ static int lds_gps_stop(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_gps_init(void *param)
+static int lds_hal_gps_init(void *param)
 {
     ctx = (struct LDS_GPS_CTX*)malloc( sizeof(struct LDS_GPS_CTX) );
     return 0;
@@ -550,7 +551,7 @@ static int lds_gps_init(void *param)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_gps_deinit(void)
+static int lds_hal_gps_deinit(void)
 {
     if(ctx){
          free(ctx);
@@ -566,10 +567,11 @@ static int lds_gps_deinit(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static unsigned int lds_gps_read(void *data,  int size)
+static unsigned int lds_hal_gps_read(void *data,  int size)
 {
 	return 0;
 }
+
 /*******************************************************************************
 *	Description		:
 *	Argurments		:
@@ -577,10 +579,11 @@ static unsigned int lds_gps_read(void *data,  int size)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static unsigned int lds_gps_write(unsigned char *data, unsigned int size)
+static unsigned int lds_hal_gps_write(unsigned char *data, unsigned int size)
 {
 	return 0;
 }
+
 /*******************************************************************************
 *	Description		:
 *	Argurments		:
@@ -588,7 +591,19 @@ static unsigned int lds_gps_write(unsigned char *data, unsigned int size)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_gps_control(LDS_CTRL_GPS type, ...)
+static  	int 	lds_hal_gps_get_error(void)
+{
+	return ctx->curr_err_state;
+}
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int lds_hal_gps_control(LDS_CTRL_GPS type, ...)
 {
 	/* check maxctrl */
 	if (type >= LDS_CTRL_GPS_MAX)
@@ -625,7 +640,7 @@ static int lds_gps_control(LDS_CTRL_GPS type, ...)
 				{
 					int *param = va_arg(ctrl, int*);
 					
-					if( lds_gps_monitoring_open(ctx) < 0)
+					if( lds_hal_gps_monitoring_open(ctx) < 0)
 					{
 					 	*param = -1;
 					}
@@ -671,15 +686,16 @@ static int lds_gps_control(LDS_CTRL_GPS type, ...)
 	return 0;
 }
 struct LDS_GPS_OPERATION lds_hal_gps = {
-		.name		    = "lds_hal_gps",
-		.ctxsize		= sizeof(struct LDS_GPS_CTX),
-		.maxctrl		= LDS_CTRL_GPS_MAX,
+		.name		    		= "lds_hal_gps",
+		.ctxsize				= sizeof(struct LDS_GPS_CTX),
+		.maxctrl				= LDS_CTRL_GPS_MAX,
 
-		.comm.lds_hal_open      = lds_gps_open,
-		.comm.lds_hal_close     = lds_gps_close,
-		.comm.lds_hal_start     = lds_gps_start,
-		.comm.lds_hal_stop      = lds_gps_stop,
-		.comm.lds_hal_init      = lds_gps_init,
-		.comm.lds_hal_deinit    = lds_gps_deinit,
-		.ioctl		            = lds_gps_control,
+		.comm.lds_hal_open  	= lds_hal_gps_open,
+		.comm.lds_hal_close 	= lds_hal_gps_close,
+		.comm.lds_hal_start 	= lds_hal_gps_start,
+		.comm.lds_hal_stop  	= lds_hal_gps_stop,
+		.comm.lds_hal_init  	= lds_hal_gps_init,
+		.comm.lds_hal_deinit 	= lds_hal_gps_deinit,
+		.comm.lds_hal_get_error = lds_hal_gps_get_error,
+		.ioctl		        	= lds_hal_gps_control,
 };

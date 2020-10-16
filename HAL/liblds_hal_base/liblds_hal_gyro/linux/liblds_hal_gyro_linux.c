@@ -11,7 +11,8 @@
 struct LDS_GYRO_CTX
 {
 	void			*ctx;
-	char 		dev_name[64];
+	char 			dev_name[64];
+	LDS_DSP_ErrorNo	curr_err_state;
 };
 
 /* Define variable  ----------------------------------------------------------*/
@@ -29,7 +30,7 @@ struct LDS_GYRO_CTX *ctx;
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int	lds_gyro_open(char *dev_name)
+static int	lds_hal_gyro_open(char *dev_name)
 {
 	memset(ctx, 0, sizeof(struct LDS_GYRO_CTX));
 	return 0;
@@ -42,36 +43,10 @@ static int	lds_gyro_open(char *dev_name)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int	lds_gyro_close(int dev_name)
+static int	lds_hal_gyro_close(int dev_name)
 {
 	return 0;
 }
-
-static int lds_gyro_start(void)
-{
-    return 0;
-}
-
-static int lds_gyro_stop(void)
-{
-    return 0;
-}
-
-static int lds_gyro_init(void *param)
-{
-    ctx = (struct LDS_GYRO_CTX*)malloc(sizeof(struct LDS_GYRO_CTX));
-    return 0;
-}
-
-static int lds_gyro_deinit(void)
-{
-    if(ctx){
-        free(ctx);
-        ctx = NULL;
-    }
-    return 0;
-}
-
 
 /*******************************************************************************
 *	Description		:
@@ -80,7 +55,67 @@ static int lds_gyro_deinit(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int	lds_gyro_control(LDS_CTRL_GYRO type, ...)
+static int lds_hal_gyro_start(void)
+{
+    return 0;
+
+}
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int lds_hal_gyro_stop(void)
+{
+    return 0;
+
+}
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int lds_hal_gyro_init(void *param)
+{
+    ctx = (struct LDS_GYRO_CTX*)malloc(sizeof(struct LDS_GYRO_CTX));
+    return 0;
+
+}
+
+static int lds_hal_gyro_deinit(void)
+{
+    if(ctx){
+        free(ctx);
+        ctx = NULL;
+    }
+    return 0;
+
+}
+
+static int lds_hal_gyro_get_error(void)
+{
+    if(ctx){
+        free(ctx);
+        ctx = NULL;
+    }
+    return 0;
+
+}
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int	lds_hal_gyro_control(LDS_CTRL_GYRO type, ...)
 {
 	/* check maxctrl */
 	if (type >= LDS_CTRL_GYRO_MAX)
@@ -113,12 +148,13 @@ static int	lds_gyro_control(LDS_CTRL_GYRO type, ...)
 }
 
 struct LDS_GYRO_OPERATION lds_hal_gyro = {
-	.name 	            = "lds_hal_gyro",
-	.comm.lds_hal_open  = lds_gyro_open,
-	.comm.lds_hal_close	= lds_gyro_close,
-	.comm.lds_hal_start = lds_gyro_start,
-	.comm.lds_hal_stop  = lds_gyro_stop,
-	.comm.lds_hal_init  = lds_gyro_init,
-	.comm.lds_hal_deinit= lds_gyro_deinit,
-	.ioctl   	        = lds_gyro_control,
+	.name 	            	= "lds_hal_gyro",
+	.comm.lds_hal_open  	= lds_hal_gyro_open,
+	.comm.lds_hal_close		= lds_hal_gyro_close,
+	.comm.lds_hal_start 	= lds_hal_gyro_start,
+	.comm.lds_hal_stop  	= lds_hal_gyro_stop,
+	.comm.lds_hal_init  	= lds_hal_gyro_init,
+	.comm.lds_hal_deinit	= lds_hal_gyro_deinit,
+	.comm.lds_hal_get_error = lds_hal_gyro_get_error,
+	.ioctl   	        	= lds_hal_gyro_control,
 };

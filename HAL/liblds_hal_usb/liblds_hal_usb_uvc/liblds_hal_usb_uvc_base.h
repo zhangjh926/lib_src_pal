@@ -24,7 +24,7 @@ typedef enum tagCTRL_USB_UVC
 struct LDS_USB_UVC_OPERATION
 {
     struct  LDS_HAL_COMMON comm;
-	const   char		*name;
+	const   char		  *name;
 
     int     (*ioctl)(LDS_CTRL_USB_UVC, ...);
 };

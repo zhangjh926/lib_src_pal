@@ -11,7 +11,6 @@ extern "C"{
 
 #if LINUX
 #include <alsa/asoundlib.h>
-#include <stdint.h>
 #endif
 
 typedef enum   _LDS_AE_ErrorNo{

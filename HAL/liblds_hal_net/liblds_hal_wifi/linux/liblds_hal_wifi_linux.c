@@ -6,8 +6,12 @@
 #include "liblds_hal_wifi_base.h"
 
 /* Define  -------------------------------------------------------------------*/
-/* Define variable  ----------------------------------------------------------*/
+struct LDS_WIFI_CTX{
+    LDS_DSP_ErrorNo curr_err_state;
+};
 
+/* Define variable  ----------------------------------------------------------*/
+static struct LDS_WIFI_CTX ctx;
 /* Define extern variable & function  ----------------------------------------*/
 
 
@@ -281,6 +285,19 @@ static int  lds_hal_get_wifi_gateway(char *get_gateway)
     return 0;
 }
 
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int  lds_hal_wifi_get_error(void)
+{
+    return ctx.curr_err_state;
+}
+
+
 struct LDS_WIFI_OPERATION lds_hal_wifi = {
     .name                           = "lds_hal_wifi",
     .comm.lds_hal_open              = lds_hal_wifi_open,
@@ -289,6 +306,7 @@ struct LDS_WIFI_OPERATION lds_hal_wifi = {
     .comm.lds_hal_stop              = lds_hal_wifi_stop,
     .comm.lds_hal_init              = lds_hal_wifi_init,
     .comm.lds_hal_deinit            = lds_hal_wifi_deinit,
+    .comm.lds_hal_get_error         = lds_hal_wifi_get_error,
     .lds_hal_set_wifi_switch_mode   = lds_hal_set_wifi_switch_mode,
     .lds_hal_set_wifi_ssid          = lds_hal_set_wifi_ssid,
     .lds_hal_set_wifi_pwd           = lds_hal_set_wifi_pwd,

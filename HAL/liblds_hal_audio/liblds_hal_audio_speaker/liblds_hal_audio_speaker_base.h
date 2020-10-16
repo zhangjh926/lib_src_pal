@@ -10,7 +10,6 @@ extern "C"{
 #define LINUX 1
 
 #ifdef LINUX
-#include <stdint.h>
 #include <alsa/asoundlib.h>
 #endif
 
@@ -67,8 +66,8 @@ typedef struct _LDS_AD_STR
 
 struct LDS_AUDIO_SPEAKER_OPERATION{
 
-    struct LDS_HAL_COMMON comm;
-    const char *name;
+    struct 	LDS_HAL_COMMON 	comm;
+    const 	char 		 	*name;
     
     int		(*lds_audio_spk_write)(char* pbuf,  unsigned int size );
     int		(*lds_audio_spk_get_volume)(void );

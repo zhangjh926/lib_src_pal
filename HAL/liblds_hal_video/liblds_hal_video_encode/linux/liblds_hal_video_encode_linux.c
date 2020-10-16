@@ -6,8 +6,13 @@
 #include "liblds_hal_video_encode_base.h"
 
 /* Define  -------------------------------------------------------------------*/
-/* Define variable  ----------------------------------------------------------*/
 
+struct LDS_VIDEO_ENCODE_CONTEXT{
+    LDS_VIDEO_ENCODE_ErrorNo curr_state;
+};
+
+/* Define variable  ----------------------------------------------------------*/
+static struct LDS_VIDEO_ENCODE_CONTEXT ctx;
 /* Define extern variable & function  ----------------------------------------*/
 
 
@@ -92,7 +97,20 @@ static int lds_hal_video_encoder_deinit(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_video_config_param(video_param * config_param, LDS_ENCODE_CHANNEL channel)
+static int lds_hal_video_encoder_get_error(void)
+{
+    return ctx.curr_state;
+}
+
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int lds_hal_video_config_param(VIDEO_PARAM * config_param)
 {
     return 0;
 }
@@ -104,7 +122,7 @@ static int lds_hal_video_config_param(video_param * config_param, LDS_ENCODE_CHA
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_video_frame_callback(get_video_frame video_frame_callback)
+static int lds_hal_video_frame_callback(GET_VIDEO_FRAME video_frame_callback)
 {
     return 0;
 }
@@ -118,6 +136,7 @@ struct LDS_VIDEO_ENCODE_OPERATION lds_hal_video_encoder = {
     .comm.lds_hal_stop              = lds_hal_video_encoder_stop,
     .comm.lds_hal_init              = lds_hal_video_encoder_init,
     .comm.lds_hal_deinit            = lds_hal_video_encoder_deinit,
+    .comm.lds_hal_get_error         = lds_hal_video_encoder_get_error,
     .lds_hal_set_video_encode_frame_callback = lds_hal_video_frame_callback,
     .lds_hal_set_video_encode_config_param  = lds_hal_video_config_param,
 };

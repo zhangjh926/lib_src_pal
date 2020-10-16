@@ -48,39 +48,46 @@ typedef enum {
     LDS_ENCODE_CHANNEL_FOURTH_STREAM,
 }LDS_ENCODE_CHANNEL;
 
-typedef struct _video_param{
-    unsigned int    width;            //video width
-    unsigned int    height;           //video height
-    LDS_FRAME_TYPE  frametype;        //Frame type,    I frame, P frame, B frame ... LDS_FRAME_TYPE
-    LDS_VIDEOENCODE_TYPE encodetype;  //Encoding type,   0 H264, 1 H265, 2 MJPEG ... LDS_VIDEOENCODE_TYPE
-    LDS_FRAME_TYPE  bitctlmode;       //Bit rate control method, 0 VBR, 1 CBR, 2 CVBR ... LDS_BITCTR_MODE
-    unsigned char   framerate;        //Frame rate
-    unsigned int    bitrate;          //Bit rate, bps
-    unsigned int    rotation;         //rotation 90°,180°,270°
-    unsigned int    gop;              //GOP
-    unsigned int    iframe_freq;      //I Frame Frequency
-    unsigned int    iframe_max_size;  //Maximum I Frame Size Limit
-}video_param;
+typedef struct _VIDEO_OSD_OVERLAY{
+    unsigned int    org_x;
+    unsigned int    org_y;
+    char            overlay_str[128];
+}VIDEO_OSD_OVERLAY;
 
-typedef struct _video_capture_buffer{
+typedef struct _VIDEO_PARAM{
+    unsigned int        width;            //video width
+    unsigned int        height;           //video height
+    LDS_FRAME_TYPE      frametype;        //Frame type,    I frame, P frame, B frame ... LDS_FRAME_TYPE
+    LDS_VIDEOENCODE_TYPE encodetype;      //Encoding type,   0 H264, 1 H265, 2 MJPEG ... LDS_VIDEOENCODE_TYPE
+    LDS_FRAME_TYPE      bitctlmode;       //Bit rate control method, 0 VBR, 1 CBR, 2 CVBR ... LDS_BITCTR_MODE
+    unsigned char       framerate;        //Frame rate
+    unsigned int        bitrate;          //Bit rate, bps
+    unsigned int        rotation;         //rotation 90°,180°,270°
+    unsigned int        gop;              //GOP
+    unsigned int        iframe_freq;      //I Frame Frequency
+    unsigned int        iframe_max_size;  //Maximum I Frame Size Limit
+    LDS_ENCODE_CHANNEL  channel;          //stream channel
+    VIDEO_OSD_OVERLAY   osd_info[4];      //osd overlay info
+}VIDEO_PARAM;
+
+typedef struct _VIDEO_CAPTURE_BUFFER{
     void *              buffer;
     unsigned int        size;
     LDS_ENCODE_CHANNEL  channel;
     unsigned int        frametype;
     unsigned int        timestamp;
-}video_capture_buffer;
+}VIDEO_CAPTURE_BUFFER;
 
-
-typedef int (*get_video_frame)(video_capture_buffer *capture_buffer, LDS_ENCODE_CHANNEL channel);
+typedef int (*GET_VIDEO_FRAME)(VIDEO_CAPTURE_BUFFER *capture_buffer);
 
 struct LDS_VIDEO_ENCODE_OPERATION
 {
-    struct LDS_HAL_COMMON comm;
-    const char *name;
+    struct  LDS_HAL_COMMON comm;
+    const   char          *name;
 
-    int (*lds_hal_set_video_encode_config_param)(video_param * config_param, LDS_ENCODE_CHANNEL channel);
+    int     (*lds_hal_set_video_encode_config_param)(VIDEO_PARAM * config_param);
     
-    int (*lds_hal_set_video_encode_frame_callback)(get_video_frame video_frame_callback);
+    int     (*lds_hal_set_video_encode_frame_callback)(GET_VIDEO_FRAME video_frame_callback);
 };
 
 /********************************************************************************

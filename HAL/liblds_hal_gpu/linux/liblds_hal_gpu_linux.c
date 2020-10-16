@@ -6,8 +6,12 @@
 #include "liblds_hal_gpu_base.h"
 
 /* Define  -------------------------------------------------------------------*/
-/* Define variable  ----------------------------------------------------------*/
+struct LDS_GPU_CTX{
+    LDS_GPU_ErrorNo curr_err_state;
+};
 
+/* Define variable  ----------------------------------------------------------*/
+static struct LDS_GPU_CTX ctx;
 /* Define extern variable & function  ----------------------------------------*/
 
 
@@ -92,6 +96,18 @@ static int lds_hal_gpu_stop(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
+static int lds_hal_gpu_get_error(void)
+{
+    return ctx.curr_err_state;
+}
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
 static int lds_hal_gpu_ioctl(LDS_CTRL_GPU type, ...)
 {
 	switch(type)
@@ -105,12 +121,13 @@ static int lds_hal_gpu_ioctl(LDS_CTRL_GPU type, ...)
 
 
 struct LDS_GPU_OPERATION lds_hal_gpu = {
-    .name               = "lds_hal_gpu",
-    .comm.lds_hal_open  = lds_hal_gpu_open,
-    .comm.lds_hal_close = lds_hal_gpu_close,
-    .comm.lds_hal_start = lds_hal_gpu_start,
-    .comm.lds_hal_stop  = lds_hal_gpu_stop,
-    .comm.lds_hal_init  = lds_hal_gpu_init,
-    .comm.lds_hal_deinit= lds_hal_gpu_deinit,
-    .ioctl              = lds_hal_gpu_ioctl,
+    .name                   = "lds_hal_gpu",
+    .comm.lds_hal_open      = lds_hal_gpu_open,
+    .comm.lds_hal_close     = lds_hal_gpu_close,
+    .comm.lds_hal_start     = lds_hal_gpu_start,
+    .comm.lds_hal_stop      = lds_hal_gpu_stop,
+    .comm.lds_hal_init      = lds_hal_gpu_init,
+    .comm.lds_hal_deinit    = lds_hal_gpu_deinit,
+    .comm.lds_hal_get_error = lds_hal_gpu_get_error,
+    .ioctl                  = lds_hal_gpu_ioctl,
 };

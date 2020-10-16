@@ -6,8 +6,12 @@
 #include "liblds_hal_bluetooth_base.h"
 
 /* Define  -------------------------------------------------------------------*/
-/* Define variable  ----------------------------------------------------------*/
+struct LDS_BLUETOOTH_CTX{
+    LDS_BLUETOOTH_ErrorNo curr_err_state;
+};
 
+/* Define variable  ----------------------------------------------------------*/
+static struct LDS_BLUETOOTH_CTX ctx;
 /* Define extern variable & function  ----------------------------------------*/
 
 
@@ -191,6 +195,19 @@ static int  lds_hal_ble_recv_data(char* recv_data)
     return 0;
 }
 
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int  lds_hal_bluetooth_get_error(void)
+{
+    return ctx.curr_err_state;
+}
+
 struct LDS_BLUETOOTH_OPERATION lds_hal_bluetooth = {
     .name                       = "lds_hal_bluetooth",
     .comm.lds_hal_open          = lds_hal_bluetooth_open,
@@ -199,6 +216,7 @@ struct LDS_BLUETOOTH_OPERATION lds_hal_bluetooth = {
     .comm.lds_hal_stop          = lds_hal_bluetooth_stop,
     .comm.lds_hal_init          = lds_hal_bluetooth_init,
     .comm.lds_hal_deinit        = lds_hal_bluetooth_deinit,
+    .comm.lds_hal_get_error     = lds_hal_bluetooth_get_error,
     .lds_hal_set_ble_uuid       = lds_hal_set_ble_uuid,
     .lds_hal_set_ble_model_name = lds_hal_set_ble_model_name,
     .lds_hal_ble_bind           = lds_hal_ble_bind,

@@ -16,11 +16,11 @@ struct LDS_RS232_CTX
 	int					read_timeout;	// ms
 	int					write_timeout;	// ms
 	int					debug_msg;
-
+	LDS_UART_ErrorNo	curr_err_state;
 };
 
 /* Define variable  ----------------------------------------------------------*/
-struct LDS_RS232_CTX *lds_rs232_ctx;
+static struct LDS_RS232_CTX *lds_rs232_ctx = NULL;
 /* Define extern variable & function  ----------------------------------------*/
 extern unsigned short rs232_crc16_ccitt(unsigned char *data, int size);
 
@@ -35,7 +35,7 @@ extern unsigned short rs232_crc16_ccitt(unsigned char *data, int size);
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-unsigned int lds_rs232_err(unsigned int e)
+static unsigned int lds_hal_rs232_err(unsigned int e)
 {
 	printf("%s (%s)\n", rs232_strerror(e), errno > 0 ? strerror(errno) : "");
 	return e;
@@ -48,7 +48,7 @@ unsigned int lds_rs232_err(unsigned int e)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-int lds_rs232_open(char *dev_name )
+static int 			lds_hal_rs232_open(char *dev_name )
 {
 	int ret = -1;
 
@@ -67,7 +67,7 @@ int lds_rs232_open(char *dev_name )
 	if( rs232_open(lds_rs232_ctx->p) > 0)
 	{
 		rs232_end(lds_rs232_ctx->p);
-		ret =  -lds_rs232_err(ret);
+		ret =  -lds_hal_rs232_err(ret);
 	}
 #if 0
 	/* default setting */
@@ -91,7 +91,7 @@ int lds_rs232_open(char *dev_name )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-int lds_rs232_close( int dev_fd )
+static int 			lds_hal_rs232_close( int dev_fd )
 {
 	int ret = -1;
 
@@ -107,7 +107,7 @@ int lds_rs232_close( int dev_fd )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-int lds_rs232_init( void *param)
+static int 			lds_hal_rs232_init( void *param)
 {
 	return 0;
 }
@@ -119,7 +119,7 @@ int lds_rs232_init( void *param)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-int lds_rs232_deinit( void)
+static int 			lds_hal_rs232_deinit( void)
 {
 	return 0;
 }
@@ -132,7 +132,7 @@ int lds_rs232_deinit( void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-int lds_rs232_start( void )
+static int 			lds_hal_rs232_start( void )
 {
 	return 0;
 }
@@ -144,7 +144,7 @@ int lds_rs232_start( void )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-int lds_rs232_stop( void)
+static int 			lds_hal_rs232_stop( void)
 {
 	return 0;
 }
@@ -156,7 +156,7 @@ int lds_rs232_stop( void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-unsigned int lds_rs232_read(unsigned char *data, unsigned int size )
+static unsigned int lds_hal_rs232_read(unsigned char *data, unsigned int size )
 {
 	unsigned int ret = 0;
 	unsigned int bytes;
@@ -165,7 +165,7 @@ unsigned int lds_rs232_read(unsigned char *data, unsigned int size )
 	if( ret > 0 )
 	{
 		if( lds_rs232_ctx->debug_msg )
-			lds_rs232_err(ret);
+			lds_hal_rs232_err(ret);
 
 		return 0;
 	}
@@ -184,7 +184,7 @@ unsigned int lds_rs232_read(unsigned char *data, unsigned int size )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-unsigned int lds_rs232_write(unsigned char *data, unsigned int size )
+static unsigned int lds_hal_rs232_write(unsigned char *data, unsigned int size )
 {
 	unsigned int ret = 0;
 	unsigned int bytes;
@@ -193,7 +193,7 @@ unsigned int lds_rs232_write(unsigned char *data, unsigned int size )
 	if( ret > 0 )
 	{
 		if( lds_rs232_ctx->debug_msg )
-			lds_rs232_err(ret);
+			lds_hal_rs232_err(ret);
 		return 0;
 	}
 #if 0
@@ -211,7 +211,7 @@ unsigned int lds_rs232_write(unsigned char *data, unsigned int size )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-int lds_rs232_control(LDS_CTRL_RS232 type, ...)
+static int 			lds_hal_rs232_control(LDS_CTRL_RS232 type, ...)
 {
 	int ret = -1;
 	struct LDS_RS232_CTX *ncl_rs232_ctx;
@@ -277,27 +277,37 @@ int lds_rs232_control(LDS_CTRL_RS232 type, ...)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-unsigned short lds_rs232_crc(unsigned char *data, int size)
+static unsigned short 	lds_hal_rs232_crc(unsigned char *data, int size)
 {
 	return rs232_crc16_ccitt(data, size);
 }
 
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static	int 		lds_hal_rs232_get_error(void)
+{
+	return lds_rs232_ctx->curr_err_state;
+}
 
 struct LDS_RS232_OPERATION lds_hal_rs232 = {
 		.name			        = "lds_hal_rs232",
 		.ctxsize		        = sizeof(struct LDS_RS232_CTX),
 		.maxctrl		        = LDS_CTRL_RS232_MAX,
-
-		.comm.lds_hal_open		= lds_rs232_open,
-		.comm.lds_hal_close		= lds_rs232_close,
-		.comm.lds_hal_start     = lds_rs232_start,
-		.comm.lds_hal_stop      = lds_rs232_stop,
-		.comm.lds_hal_init      = lds_rs232_init,
-		.comm.lds_hal_deinit    = lds_rs232_deinit,
-		.read			        = lds_rs232_read,
-		.write			        = lds_rs232_write,
-		.ioctl		            = lds_rs232_control,
-		/* component dependent fuction */
-		.crc			        = lds_rs232_crc
+		.comm.lds_hal_open		= lds_hal_rs232_open,
+		.comm.lds_hal_close		= lds_hal_rs232_close,
+		.comm.lds_hal_start     = lds_hal_rs232_start,
+		.comm.lds_hal_stop      = lds_hal_rs232_stop,
+		.comm.lds_hal_init      = lds_hal_rs232_init,
+		.comm.lds_hal_deinit    = lds_hal_rs232_deinit,
+		.comm.lds_hal_get_error = lds_hal_rs232_get_error,
+		.read			        = lds_hal_rs232_read,
+		.write			        = lds_hal_rs232_write,
+		.ioctl		            = lds_hal_rs232_control,
+		.crc			        = lds_hal_rs232_crc
 };
 

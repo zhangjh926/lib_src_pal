@@ -26,9 +26,9 @@ typedef enum tagCTRL_ADC
 */
 struct LDS_ADC_OPERATION
 {
-    struct LDS_HAL_COMMON comm;
+    struct 			LDS_HAL_COMMON comm;
        
-	const char		*name;
+	const 			char		  *name;
     
 	int				(*ioctl)    (LDS_CTRL_ADC type, ...);
 };

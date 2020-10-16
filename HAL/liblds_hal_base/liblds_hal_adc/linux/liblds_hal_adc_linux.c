@@ -7,8 +7,11 @@
 
 
 /* Define  -------------------------------------------------------------------*/
+struct LDS_ADC_CXT{
+	LDS_ADC_ErrorNo curr_err_state;
+};
 /* Define variable  ----------------------------------------------------------*/
-
+static struct LDS_ADC_CXT ctx;
 /* Define extern variable & function  ----------------------------------------*/
 
 /*******************************************************************************
@@ -90,6 +93,19 @@ static int lds_hal_adc_stop(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
+static int lds_hal_adc_get_error(void)
+{
+	return ctx.curr_err_state;
+}
+
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
 static int lds_hal_adc_ioctl(LDS_CTRL_ADC type, ...)
 {
 	switch(type)
@@ -103,7 +119,7 @@ static int lds_hal_adc_ioctl(LDS_CTRL_ADC type, ...)
 	return 0;
 }
 
-struct LDS_ADC_OPERATION  lds_hal_adc = {
+struct LDS_ADC_OPERATION  lds_hal_adc = {
 	.name                       = "LDS_HAL_ADC",
 	.comm.lds_hal_open          = lds_hal_adc_open,
 	.comm.lds_hal_close         = lds_hal_adc_close,
@@ -111,6 +127,7 @@ struct LDS_ADC_OPERATION  lds_hal_adc = {
 	.comm.lds_hal_stop          = lds_hal_adc_stop,
 	.comm.lds_hal_init          = lds_hal_adc_init,
 	.comm.lds_hal_deinit        = lds_hal_adc_deinit,
+	.comm.lds_hal_get_error		= lds_hal_adc_get_error,
 	.ioctl                      = lds_hal_adc_ioctl, 
 	
 };

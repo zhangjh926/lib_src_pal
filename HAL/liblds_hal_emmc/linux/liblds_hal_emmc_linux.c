@@ -6,8 +6,12 @@
 #include "liblds_hal_emmc_base.h"
 
 /* Define  -------------------------------------------------------------------*/
-/* Define variable  ----------------------------------------------------------*/
+struct LDS_EMMC_CTX{
+    LDS_EMMC_ErrorNo curr_err_state;
+};
 
+/* Define variable  ----------------------------------------------------------*/
+static struct LDS_EMMC_CTX ctx;
 /* Define extern variable & function  ----------------------------------------*/
 
 
@@ -92,6 +96,19 @@ static int lds_hal_emmc_stop(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
+static int lds_hal_emmc_get_error(void)
+{
+    return ctx.curr_err_state;
+}
+
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
 static int lds_hal_emmc_ioctl(LDS_CTRL_EMMC type, ...)
 {
 	switch(type)
@@ -105,13 +122,14 @@ static int lds_hal_emmc_ioctl(LDS_CTRL_EMMC type, ...)
 
 
 struct LDS_EMMC_OPERATION lds_hal_emmc = {
-    .name               = "lds_hal_emmc",
-    .comm.lds_hal_open  = lds_hal_emmc_open,
-    .comm.lds_hal_close = lds_hal_emmc_close,
-    .comm.lds_hal_start = lds_hal_emmc_start,
-    .comm.lds_hal_stop  = lds_hal_emmc_stop,
-    .comm.lds_hal_init  = lds_hal_emmc_init,
-    .comm.lds_hal_deinit= lds_hal_emmc_deinit,
-    .ioctl              = lds_hal_emmc_ioctl,
+    .name                   = "lds_hal_emmc",
+    .comm.lds_hal_open      = lds_hal_emmc_open,
+    .comm.lds_hal_close     = lds_hal_emmc_close,
+    .comm.lds_hal_start     = lds_hal_emmc_start,
+    .comm.lds_hal_stop      = lds_hal_emmc_stop,
+    .comm.lds_hal_init      = lds_hal_emmc_init,
+    .comm.lds_hal_deinit    = lds_hal_emmc_deinit,
+    .comm.lds_hal_get_error = lds_hal_emmc_get_error,
+    .ioctl                  = lds_hal_emmc_ioctl,
 };
 

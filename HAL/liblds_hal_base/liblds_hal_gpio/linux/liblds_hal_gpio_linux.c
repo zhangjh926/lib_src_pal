@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "../liblds_hal_gpio_base.h"
+#include "liblds_hal_gpio_base.h"
 
 /* Define  -------------------------------------------------------------------*/
 struct LDS_GPIO_CTX
@@ -21,12 +21,13 @@ struct LDS_GPIO_CTX
 	int				direction;
 	char			sysfs_file[128];
 	int				status;
+	LDS_GPIO_ErrorNo curr_err_state;
 };
 
 /* Define variable  ----------------------------------------------------------*/
 #define GPIO_PINNO_MIN					0
 #define GPIO_PINNO_MAX					159
-#define SYSFS_GPIO_PATH				"/sys/class/gpio"
+#define SYSFS_GPIO_PATH					"/sys/class/gpio"
 
 static struct LDS_GPIO_CTX  *ctx = NULL;
 static int lds_hal_gpio_pin_set(struct LDS_GPIO_CTX *ctx, int pin_num)
@@ -265,6 +266,11 @@ static unsigned int lds_hal_gpio_write( unsigned int pin_num, unsigned int value
 	return 0;
 }
 
+static int			lds_hal_gpio_get_error(void)
+{
+	return ctx->curr_err_state;
+}
+
 static int lds_hal_gpio_ioctl(LDS_CTRL_GPIO type, ...)
 {
 	int ret = 0;	
@@ -328,5 +334,6 @@ struct LDS_GPIO_OPERATION lds_hal_gpio = {
 		.comm.lds_hal_stop      = lds_hal_gpio_stop,
 		.comm.lds_hal_init      = lds_hal_gpio_init,
 		.comm.lds_hal_deinit    = lds_hal_gpio_deinit,
+		.comm.lds_hal_get_error = lds_hal_gpio_get_error,
 		.ioctl			        = lds_hal_gpio_ioctl,
 };

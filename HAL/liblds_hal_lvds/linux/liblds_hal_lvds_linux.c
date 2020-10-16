@@ -6,8 +6,12 @@
 #include "liblds_hal_lvds_base.h"
 
 /* Define  -------------------------------------------------------------------*/
-/* Define variable  ----------------------------------------------------------*/
+struct LDS_LVDS_CTX{
+    LDS_LVDS_ErrorNo curr_err_state;
+};
 
+/* Define variable  ----------------------------------------------------------*/
+static struct LDS_LVDS_CTX ctx;
 /* Define extern variable & function  ----------------------------------------*/
 
 
@@ -92,6 +96,19 @@ static int lds_hal_lvds_stop(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
+static int lds_hal_lvds_get_error(void)
+{
+    return ctx.curr_err_state;
+}
+
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
 static int lds_hal_lvds_ioctl(LDS_CTRL_LVDS type, ...)
 {
 	switch(type)
@@ -105,12 +122,13 @@ static int lds_hal_lvds_ioctl(LDS_CTRL_LVDS type, ...)
 
 
 struct LDS_LVDS_OPERATION lds_hal_lvds = {
-    .name               = "lds_hal_lvds",
-    .comm.lds_hal_open  = lds_hal_lvds_open,
-    .comm.lds_hal_close = lds_hal_lvds_close,
-    .comm.lds_hal_start = lds_hal_lvds_start,
-    .comm.lds_hal_stop  = lds_hal_lvds_stop,
-    .comm.lds_hal_init  = lds_hal_lvds_init,
-    .comm.lds_hal_deinit= lds_hal_lvds_deinit,
-    .ioctl              = lds_hal_lvds_ioctl,
+    .name                   = "lds_hal_lvds",
+    .comm.lds_hal_open      = lds_hal_lvds_open,
+    .comm.lds_hal_close     = lds_hal_lvds_close,
+    .comm.lds_hal_start     = lds_hal_lvds_start,
+    .comm.lds_hal_stop      = lds_hal_lvds_stop,
+    .comm.lds_hal_init      = lds_hal_lvds_init,
+    .comm.lds_hal_deinit    = lds_hal_lvds_deinit,
+    .comm.lds_hal_get_error = lds_hal_lvds_get_error,
+    .ioctl                  = lds_hal_lvds_ioctl,
 };

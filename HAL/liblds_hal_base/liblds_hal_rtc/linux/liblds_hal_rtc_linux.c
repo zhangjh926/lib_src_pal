@@ -15,11 +15,12 @@
 struct LDS_RTC_CTX
 {
 	void			*ctx;
-	char 		dev_name[64];
+	char 			dev_name[64];
+	LDS_RTC_ErrorNo	curr_err_state;
 };
 
 /* Define variable  ----------------------------------------------------------*/
-struct LDS_RTC_CTX *ctx = NULL;
+static struct LDS_RTC_CTX *ctx = NULL;
 /* Define extern variable & function  ----------------------------------------*/
 
 /* Function prototype  -------------------------------------------------------*/
@@ -32,7 +33,7 @@ struct LDS_RTC_CTX *ctx = NULL;
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_rtc_time_get(struct tm *get_time)
+static int lds_hal_rtc_time_get(struct tm *get_time)
 {
 	time_t current_time;
 	
@@ -60,7 +61,7 @@ static int lds_rtc_time_get(struct tm *get_time)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_rtc_time_set_value(struct tm *set_time)
+static int lds_hal_rtc_time_set_value(struct tm *set_time)
 {
 	struct timeval 	tv;
 	time_t time;
@@ -86,7 +87,7 @@ static int lds_rtc_time_set_value(struct tm *set_time)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_rtc_time_set()
+static int lds_hal_rtc_time_set()
 {
 	int ret = -1;
 	ret = system("/sbin/hwclock -w");//set hardware clock frome system clock
@@ -110,7 +111,7 @@ static int lds_rtc_time_set()
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_rtc_open(char *dev_name)
+static int lds_hal_rtc_open(char *dev_name)
 {
 	memset(ctx, 0, sizeof(struct LDS_RTC_CTX));
 	return 0;
@@ -123,7 +124,7 @@ static int lds_rtc_open(char *dev_name)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_rtc_close( int dev_fd )
+static int lds_hal_rtc_close( int dev_fd )
 {
 	return 0;
 }
@@ -135,7 +136,7 @@ static int lds_rtc_close( int dev_fd )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_rtc_init( void *param)
+static int lds_hal_rtc_init( void *param)
 {
     ctx = (struct LDS_RTC_CTX *)malloc(sizeof(struct LDS_RTC_CTX));
 	return 0;
@@ -148,7 +149,7 @@ static int lds_rtc_init( void *param)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_rtc_deinit( void )
+static int lds_hal_rtc_deinit( void )
 {
     if(ctx){
         free(ctx);
@@ -164,7 +165,7 @@ static int lds_rtc_deinit( void )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_rtc_start( void )
+static int lds_hal_rtc_start( void )
 {
 	return 0;
 }
@@ -176,7 +177,7 @@ static int lds_rtc_start( void )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_rtc_stop( void )
+static int lds_hal_rtc_stop( void )
 {
 	return 0;
 }
@@ -188,10 +189,11 @@ static int lds_rtc_stop( void )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static unsigned int lds_rtc_read(unsigned char *data, unsigned int size)
+static unsigned int lds_hal_rtc_read(unsigned char *data, unsigned int size)
 {
 	return 0;
 }
+
 /*******************************************************************************
 *	Description		:
 *	Argurments		:
@@ -199,10 +201,11 @@ static unsigned int lds_rtc_read(unsigned char *data, unsigned int size)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static unsigned int lds_rtc_write(unsigned char *data, unsigned int size)
+static unsigned int lds_hal_rtc_write(unsigned char *data, unsigned int size)
 {
 	return 0;
 }
+
 /*******************************************************************************
 *	Description		:
 *	Argurments		:
@@ -210,7 +213,19 @@ static unsigned int lds_rtc_write(unsigned char *data, unsigned int size)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_rtc_control(LDS_CTRL_RTC type, ...)
+static  int 		lds_hal_rtc_get_error(void)
+{
+	return ctx->curr_err_state;
+}
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int lds_hal_rtc_control(LDS_CTRL_RTC type, ...)
 {
 	/* check maxctrl */
 	if (type >= LDS_CTRL_RTC_MAX)
@@ -229,19 +244,19 @@ static int lds_rtc_control(LDS_CTRL_RTC type, ...)
 			case LDS_CTRL_RTC_VALUE_SET:
 				{
 					struct tm *param = va_arg(ctrl, struct tm *);
-					lds_rtc_time_set_value(param);
+					lds_hal_rtc_time_set_value(param);
 				}
 				break;
 			case LDS_CTRL_RTC_SET:
 				{
 					int *parma = va_arg(ctrl, int *);
-					*parma = lds_rtc_time_set();
+					*parma = lds_hal_rtc_time_set();
 				}
 				break;
 			case LDS_CTRL_RTC_TIME_GET:
 				{
 					struct tm *param = va_arg(ctrl, struct tm *);
-					lds_rtc_time_get(param);
+					lds_hal_rtc_time_get(param);
 				}
 				break;
 
@@ -259,17 +274,18 @@ static int lds_rtc_control(LDS_CTRL_RTC type, ...)
 	return 0;
 }
 struct LDS_RTC_OPERATION lds_hal_rtc = {
-		.name		        = "lds_hal_rtc",
-		.ctxsize		    = sizeof(struct LDS_RTC_CTX),
-		.maxctrl		    = LDS_CTRL_RTC_MAX,
+		.name		        	= "lds_hal_rtc",
+		.ctxsize		    	= sizeof(struct LDS_RTC_CTX),
+		.maxctrl		    	= LDS_CTRL_RTC_MAX,
 
-		.comm.lds_hal_open	= lds_rtc_open,
-		.comm.lds_hal_close	= lds_rtc_close,
-		.comm.lds_hal_start = lds_rtc_start,
-		.comm.lds_hal_stop  = lds_rtc_stop,
-		.comm.lds_hal_init  = lds_rtc_init,
-		.comm.lds_hal_deinit= lds_rtc_deinit,
-		.ioctl		        = lds_rtc_control,
+		.comm.lds_hal_open		= lds_hal_rtc_open,
+		.comm.lds_hal_close		= lds_hal_rtc_close,
+		.comm.lds_hal_start 	= lds_hal_rtc_start,
+		.comm.lds_hal_stop  	= lds_hal_rtc_stop,
+		.comm.lds_hal_init  	= lds_hal_rtc_init,
+		.comm.lds_hal_deinit	= lds_hal_rtc_deinit,
+		.comm.lds_hal_get_error = lds_hal_rtc_get_error,
+		.ioctl		        	= lds_hal_rtc_control,
 
 };
 

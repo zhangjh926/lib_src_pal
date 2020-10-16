@@ -25,10 +25,11 @@ struct LDS_WATCHDOG_CTX
     char            dev_name[64];
 	int			    fd;
 	int			    open_status;
+	LDS_WDT_ErrorNo	curr_err_state;
 };
 
 /* Define variable  ----------------------------------------------------------*/
-struct LDS_WATCHDOG_CTX *ctx;
+static struct LDS_WATCHDOG_CTX *ctx = NULL;
 /* Define extern variable & function  ----------------------------------------*/
 
 /* Function prototype  -------------------------------------------------------*/
@@ -155,7 +156,7 @@ static int _wdt_alive( int fd )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int watchdog_dev_open( void *ctx_t)
+static int 			watchdog_dev_open( void *ctx_t)
 {
 	struct LDS_WATCHDOG_CTX *ctx;
 
@@ -185,7 +186,7 @@ static int watchdog_dev_open( void *ctx_t)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-int lds_wdt_open( char *dev_name )
+static int 			lds_hal_wdt_open( char *dev_name )
 {   
     if(NULL == dev_name){
         return -1;
@@ -205,7 +206,7 @@ int lds_wdt_open( char *dev_name )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-int lds_wdt_close( int dev_fd )
+static int 			lds_hal_wdt_close( int dev_fd )
 {
 	if(ctx->open_status)
 		close(ctx->fd);
@@ -220,7 +221,7 @@ int lds_wdt_close( int dev_fd )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-int lds_wdt_start( void )
+static int 			lds_hal_wdt_start( void )
 {
 	return 0;
 }
@@ -233,7 +234,7 @@ int lds_wdt_start( void )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-int lds_wdt_stop( void )
+static int 			lds_hal_wdt_stop( void )
 {
 	return 0;
 }
@@ -245,7 +246,7 @@ int lds_wdt_stop( void )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-int lds_wdt_init( void *param)
+static int 			lds_hal_wdt_init( void *param)
 {
     ctx = (struct LDS_WATCHDOG_CTX *)malloc(sizeof(struct LDS_WATCHDOG_CTX));
 	return 0;
@@ -259,7 +260,7 @@ int lds_wdt_init( void *param)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-int lds_wdt_deinit( void )
+static int 			lds_hal_wdt_deinit( void )
 {
     if(ctx){
         free(ctx);
@@ -276,10 +277,12 @@ int lds_wdt_deinit( void )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-unsigned int lds_wdt_read( unsigned char *data, unsigned int size)
+static unsigned int lds_hal_wdt_read( unsigned char *data, unsigned int size)
 {
 	return 0;
 }
+
+
 /*******************************************************************************
 *	Description		:
 *	Argurments		:
@@ -287,10 +290,12 @@ unsigned int lds_wdt_read( unsigned char *data, unsigned int size)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-unsigned int lds_wdt_write( unsigned char *data, unsigned int size)
+static unsigned int lds_hal_wdt_write( unsigned char *data, unsigned int size)
 {
 	return 0;
 }
+
+
 /*******************************************************************************
 *	Description		:
 *	Argurments		:
@@ -298,7 +303,19 @@ unsigned int lds_wdt_write( unsigned char *data, unsigned int size)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-int lds_wdt_control(LDS_CTRL_WATCHDOG type, ...)
+static int lds_hal_wdt_get_error( void )
+{
+	return ctx->curr_err_state;
+}
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int 			lds_hal_wdt_control(LDS_CTRL_WATCHDOG type, ...)
 {
 	/* check maxctrl */
 	if (type >= LDS_CTRL_WATCHDOG_MAX)
@@ -360,16 +377,16 @@ int lds_wdt_control(LDS_CTRL_WATCHDOG type, ...)
 }
 
 struct LDS_WATCHDOG_OPERATION lds_hal_wdt = {
-		.name			    = "lds_hal_watchdog",
-		.ctxsize		    = sizeof(struct LDS_WATCHDOG_CTX),
-		.maxctrl		    = LDS_CTRL_WATCHDOG_MAX,
-
-		.comm.lds_hal_open	= lds_wdt_open,
-		.comm.lds_hal_close	= lds_wdt_close,
-		.comm.lds_hal_start = lds_wdt_start,
-		.comm.lds_hal_stop  = lds_wdt_stop,
-		.comm.lds_hal_init  = lds_wdt_init,
-		.comm.lds_hal_deinit= lds_wdt_deinit,
-		.ioctl	            = lds_wdt_control,
+		.name			    	= "lds_hal_watchdog",
+		.ctxsize		    	= sizeof(struct LDS_WATCHDOG_CTX),
+		.maxctrl		    	= LDS_CTRL_WATCHDOG_MAX,
+		.comm.lds_hal_open		= lds_hal_wdt_open,
+		.comm.lds_hal_close		= lds_hal_wdt_close,
+		.comm.lds_hal_start 	= lds_hal_wdt_start,
+		.comm.lds_hal_stop  	= lds_hal_wdt_stop,
+		.comm.lds_hal_init  	= lds_hal_wdt_init,
+		.comm.lds_hal_deinit	= lds_hal_wdt_deinit,
+		.comm.lds_hal_get_error = lds_hal_wdt_get_error,
+		.ioctl	            	= lds_hal_wdt_control,
 };
 

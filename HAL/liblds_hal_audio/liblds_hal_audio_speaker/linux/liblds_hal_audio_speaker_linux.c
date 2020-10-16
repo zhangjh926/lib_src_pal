@@ -20,6 +20,7 @@ static snd_pcm_uframes_t period_size;
 static LDS_AD_STR *ptAudio = NULL;
 /* define and enums - Andy */
 static int bEnable = 0 ;
+static LDS_AUDIO_DECODE_ErrorNo curr_err_state;
 
 /********************************************************************************
 *	Description		: stop PCM device after PB finished.
@@ -860,16 +861,22 @@ void lds_audio_speaker_set_mixer_selem_switch( const char* selem_name, int value
 	snd_mixer_close(handle);
 }
 
-struct LDS_AUDIO_SPEAKER_OPERATION lds_hal_audio_spk = {
-    .name               = "lds_hal_audio_spk",
-    .comm.lds_hal_open  = lds_audio_speaker_open,
-    .comm.lds_hal_close = lds_audio_speaker_close,
-    .comm.lds_hal_init  = lds_audio_speaker_init,
-    .comm.lds_hal_deinit= lds_audio_speaker_deinit,
-    .comm.lds_hal_start = lds_audio_speaker_start,
-    .comm.lds_hal_stop  = lds_audio_speaker_stop,
+static int lds_audio_speaker_get_error(void)
+{
+	return curr_err_state;
+}
 
-    .lds_audio_spk_write        = lds_audio_speaker_write,
+struct LDS_AUDIO_SPEAKER_OPERATION lds_hal_audio_spk = {
+    .name               		= "lds_hal_audio_spk",
+    .comm.lds_hal_open  		= lds_audio_speaker_open,
+    .comm.lds_hal_close 		= lds_audio_speaker_close,
+    .comm.lds_hal_init  		= lds_audio_speaker_init,
+    .comm.lds_hal_deinit		= lds_audio_speaker_deinit,
+    .comm.lds_hal_start 		= lds_audio_speaker_start,
+    .comm.lds_hal_stop  		= lds_audio_speaker_stop,
+	.comm.lds_hal_get_error		= lds_audio_speaker_get_error,
+
+    .lds_audio_spk_write     	= lds_audio_speaker_write,
     .lds_audio_spk_get_volume   = lds_audio_speaker_get_volume,
     .lds_audio_spk_set_volume   = lds_audio_speaker_set_volume,
     .lds_audio_spk_mute         = lds_audio_speaker_mute,

@@ -6,8 +6,11 @@
 #include "liblds_hal_flash_base.h"
 
 /* Define  -------------------------------------------------------------------*/
+struct LDS_FLASH_CTX{
+    LDS_FLASH_ErrorNo curr_err_state;
+};
 /* Define variable  ----------------------------------------------------------*/
-
+static struct LDS_FLASH_CTX ctx;
 /* Define extern variable & function  ----------------------------------------*/
 
 
@@ -189,6 +192,20 @@ static int	lds_hal_flash_compare(char *source_file_name, char *new_file_name)
     return 0;
 }
 
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int	lds_hal_flash_get_error(void)
+{
+    return ctx.curr_err_state;
+}
+
+
 struct LDS_FLASH_OPERATION lds_hal_flash = {
     .name                   = "lds_hal_flash",
     .comm.lds_hal_open      = lds_hal_flash_open,
@@ -197,6 +214,7 @@ struct LDS_FLASH_OPERATION lds_hal_flash = {
     .comm.lds_hal_stop      = lds_hal_flash_stop,
     .comm.lds_hal_init      = lds_hal_flash_init,
     .comm.lds_hal_deinit    = lds_hal_flash_deinit,
+    .comm.lds_hal_get_error = lds_hal_flash_get_error,
     .lds_hal_flash_copy     = lds_hal_flash_copy,
 	.lds_hal_flash_erase    = lds_hal_flash_erase,
 	.lds_hal_flash_eraseall = lds_hal_flash_eraseall,

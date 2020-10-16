@@ -37,7 +37,7 @@ typedef enum
  }LDS_FRAME_TYPE;
 
 
-typedef struct _video_param{
+typedef struct _VIDEO_PARAM{
     unsigned int  width;        //video width
     unsigned int  height;       //video height
     unsigned char frametype;    //Frame type,    I frame, P frame, B frame 
@@ -47,23 +47,22 @@ typedef struct _video_param{
     unsigned int  bitrate;      //Bit rate, bps
     unsigned int  gop;          //GOP
     unsigned int  iframe_freq;  //I Frame Frequency
-}video_param;
+}VIDEO_PARAM;
 
-typedef struct _video_playback_buffer{
+typedef struct _VIDEO_PLAYBACK_BUFFER{
     void *       playback_buffer;
     unsigned int playback_size;
-}video_playback_buffer;
+}VIDEO_PLAYBACK_BUFFER;
 
-
-typedef int (*set_playback_video_frame)(video_playback_buffer *playback_buffer);
+typedef int (*SET_PLAYBACK_VIDEO_FRAME)(VIDEO_PLAYBACK_BUFFER *playback_buffer);
 
 struct LDS_VIDEO_DECODE_OPERATION
 {
-    struct  LDS_HAL_COMMON comm;
-    const   char *name;
+    struct  LDS_HAL_COMMON  comm;
+    const   char            *name;
     
-    int     (*set_playback_param)(video_param * playback_param);
-    int     (*set_video_playback_callback)(set_playback_video_frame video_playback_callback);
+    int     (*set_playback_param)(VIDEO_PARAM * playback_param);
+    int     (*set_video_playback_callback)(SET_PLAYBACK_VIDEO_FRAME video_playback_callback);
 };
 
 /********************************************************************************

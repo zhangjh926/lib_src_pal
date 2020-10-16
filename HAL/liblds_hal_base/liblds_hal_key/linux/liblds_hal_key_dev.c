@@ -24,6 +24,7 @@ struct LDS_KEY_CTX
 
 	 void*		ctx;
 	 pthread_t	pthread;
+	 LDS_KEY_ErrorNo curr_err_state;
 }; 
 
 /* Define variable  ----------------------------------------------------------*/
@@ -105,7 +106,7 @@ static void *t_key_monitoring( void *ctx_t )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_key_pin_open(void* ctx_t, char* dev)
+static int lds_hal_key_pin_open(void* ctx_t, char* dev)
 {
 	struct LDS_KEY_CTX *ctx;
 
@@ -131,7 +132,7 @@ static int lds_key_pin_open(void* ctx_t, char* dev)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int  lds_key_monitoring_open(void *ctx_t)
+static int  lds_hal_key_monitoring_open(void *ctx_t)
 {
 	struct LDS_KEY_CTX *ctx;
 
@@ -158,7 +159,7 @@ static int  lds_key_monitoring_open(void *ctx_t)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int key_input_device_search(int *dev_num, char *dev_name)
+static int lds_hal_key_input_device_search(int *dev_num, char *dev_name)
 {	
 	FILE	*fp;
 	char	buf[256];
@@ -209,7 +210,7 @@ static int key_input_device_search(int *dev_num, char *dev_name)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_key_dev_open(char* dev_name)
+static int lds_hal_key_dev_open(char* dev_name)
 {
 	int dev_num = 0;
 	char buf[36] = {0,};
@@ -217,12 +218,12 @@ static int lds_key_dev_open(char* dev_name)
 	memset( ctx, 0, sizeof(struct LDS_KEY_CTX));
 	ctx->thread_start = 0;
 
-	key_input_device_search(&dev_num, dev_name);
+	lds_hal_key_input_device_search(&dev_num, dev_name);
 
 	sprintf(buf, "/dev/input/event%d", dev_num);
 	printf("keypad /dev/input/event%d\n", dev_num);
 
-	if( lds_key_pin_open(ctx, buf) < 0)
+	if( lds_hal_key_pin_open(ctx, buf) < 0)
 	{
 		printf("[ERROR] %s::%d >>>> keypad device open faile \n", __FILE__, __LINE__);
 		return -1;
@@ -238,9 +239,9 @@ static int lds_key_dev_open(char* dev_name)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_key_dev_close(int dev_fd)
+static int lds_hal_key_dev_close(int dev_fd)
 {
-       close(dev_fd);
+    close(dev_fd);
 	return 0;
 }
 
@@ -251,7 +252,7 @@ static int lds_key_dev_close(int dev_fd)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_key_dev_start(void)
+static int lds_hal_key_dev_start(void)
 {
     return 0;
 }
@@ -263,7 +264,7 @@ static int lds_key_dev_start(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_key_dev_stop(void)
+static int lds_hal_key_dev_stop(void)
 {
     return 0;
 }
@@ -275,7 +276,7 @@ static int lds_key_dev_stop(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_key_dev_init(void *param)
+static int lds_hal_key_dev_init(void *param)
 {
     ctx = (struct LDS_KEY_CTX*)malloc(sizeof(struct LDS_KEY_CTX));
     return 0;
@@ -288,13 +289,26 @@ static int lds_key_dev_init(void *param)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_key_dev_deinit(void)
+static int lds_hal_key_dev_deinit(void)
 {
     if(ctx){
         free(ctx);
         ctx = NULL;
     }
     return 0;
+}
+
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int lds_hal_key_get_error(void)
+{
+    return ctx->curr_err_state;
 }
 
 /*******************************************************************************
@@ -304,7 +318,7 @@ static int lds_key_dev_deinit(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_key_dev_ioctl(LDS_CTRL_KEY type, ...)
+static int lds_hal_key_dev_ioctl(LDS_CTRL_KEY type, ...)
 {
 	/* check maxctrl */
 	if (type >= LDS_CTRL_KEY_MAX)
@@ -335,7 +349,7 @@ static int lds_key_dev_ioctl(LDS_CTRL_KEY type, ...)
 				{
 					int *param = va_arg(ctrl, int*);
 					
-					if( lds_key_monitoring_open(ctx) < 0)
+					if( lds_hal_key_monitoring_open(ctx) < 0)
 					{
 					 	*param = -1;
 					}
@@ -388,16 +402,17 @@ static int lds_key_dev_ioctl(LDS_CTRL_KEY type, ...)
 }
 
 struct LDS_KEY_OPERATION lds_key_dev = {
-		.name		        = "lds_key_dev",
-		.ctxsize	        = sizeof(struct LDS_KEY_CTX),
-		.maxctrl	        = LDS_CTRL_KEY_MAX,
+		.name		        	= "lds_key_dev",
+		.ctxsize	        	= sizeof(struct LDS_KEY_CTX),
+		.maxctrl	        	= LDS_CTRL_KEY_MAX,
 
-		.comm.lds_hal_open	= lds_key_dev_open,
-		.comm.lds_hal_close = lds_key_dev_close,
-		.comm.lds_hal_start = lds_key_dev_start,
-		.comm.lds_hal_stop  = lds_key_dev_stop,
-		.comm.lds_hal_init  = lds_key_dev_init,
-		.comm.lds_hal_deinit= lds_key_dev_deinit,
-		.ioctl	 	        = lds_key_dev_ioctl,
+		.comm.lds_hal_open		= lds_hal_key_dev_open,
+		.comm.lds_hal_close 	= lds_hal_key_dev_close,
+		.comm.lds_hal_start 	= lds_hal_key_dev_start,
+		.comm.lds_hal_stop  	= lds_hal_key_dev_stop,
+		.comm.lds_hal_init  	= lds_hal_key_dev_init,
+		.comm.lds_hal_deinit	= lds_hal_key_dev_deinit,
+		.comm.lds_hal_get_error	= lds_hal_key_get_error,
+		.ioctl	 	        	= lds_hal_key_dev_ioctl,
 };
 

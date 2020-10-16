@@ -8,8 +8,12 @@
 #include "liblds_hal_sdcard_base.h"
 
 /* Define  -------------------------------------------------------------------*/
-/* Define variable  ----------------------------------------------------------*/
+struct LDS_SDCARD_CTX{
+    LDS_SDCARD_ErrorNo curr_err_state;
+};
 
+/* Define variable  ----------------------------------------------------------*/
+static struct LDS_SDCARD_CTX ctx;
 /* Define extern variable & function  ----------------------------------------*/
 
 
@@ -161,14 +165,29 @@ static int lds_hal_sdcard_fallocate(int fd, int mode, unsigned long offset, unsi
     return 0;
 }
 
-struct LDS_SDCARD_OPERATION lds_hal_sdcard = {
-    .name                   = "lds_hal_sdcard",
-    .comm.lds_hal_open      = lds_hal_sdcard_open,
-    .comm.lds_hal_close     = lds_hal_sdcard_close,
-    .comm.lds_hal_start     = lds_hal_sdcard_start,
-    .comm.lds_hal_stop      = lds_hal_sdcard_stop,
-    .comm.lds_hal_init      = lds_hal_sdcard_init,
-    .comm.lds_hal_deinit    = lds_hal_sdcard_deinit,
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int lds_hal_sdcard_get_error(void)
+{
+    return ctx.curr_err_state;
+}
+
+
+struct LDS_SDCARD_OPERATION         lds_hal_sdcard = {
+    .name                           = "lds_hal_sdcard",
+    .comm.lds_hal_open              = lds_hal_sdcard_open,
+    .comm.lds_hal_close             = lds_hal_sdcard_close,
+    .comm.lds_hal_start             = lds_hal_sdcard_start,
+    .comm.lds_hal_stop              = lds_hal_sdcard_stop,
+    .comm.lds_hal_init              = lds_hal_sdcard_init,
+    .comm.lds_hal_deinit            = lds_hal_sdcard_deinit,
+    .comm.lds_hal_get_error         = lds_hal_sdcard_get_error,
     .lds_hal_sdcard_get_total_space = lds_hal_sdcard_get_total_space,
     .lds_hal_sdcard_get_free_space  = lds_hal_sdcard_get_free_space,
     .lds_hal_sdcard_get_state       = lds_hal_sdcard_get_state,

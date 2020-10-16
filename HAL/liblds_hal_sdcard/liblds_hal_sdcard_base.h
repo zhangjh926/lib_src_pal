@@ -34,8 +34,8 @@ typedef enum _SDCardFsType
 
 struct LDS_SDCARD_OPERATION
 {
-    struct  LDS_HAL_COMMON comm;    
-	const   char		*name;
+    struct      LDS_HAL_COMMON comm;
+	const       char		  *name;
 
     int         (*lds_hal_sdcard_get_total_space)(void);
     int         (*lds_hal_sdcard_get_free_space)(void);

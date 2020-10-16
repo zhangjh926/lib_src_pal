@@ -12,7 +12,7 @@ static snd_pcm_uframes_t period_size;
 static LDS_AE_STR *ptAudio = NULL;
 /* define and enums - andy */
 static int bEnable = 0 ;
-
+static LDS_AUDIO_ENCODE_ErrorNo curr_err_state;
 /******************************************************************************
 * @desc
 * set alas sw param
@@ -185,7 +185,7 @@ static int __set_hw_params( void )
 * lds_ae_init()
 *
 *******************************************************************************/
-static int lds_ae_init( void *param)
+static int lds_audio_encode_init( void *param)
 {
      int err = 0;
 
@@ -242,7 +242,7 @@ static int lds_ae_init( void *param)
 * lds_ae_deinit()
 *
 *******************************************************************************/
-static int lds_ae_deinit( void)
+static int lds_audio_encode_deinit( void)
 {
 	if( bEnable == 0 )
       {
@@ -288,7 +288,7 @@ static int lds_ae_deinit( void)
 * lds_ae_read()
 *
 *******************************************************************************/
-static int lds_ae_read( char* pbuf,  int size )
+static int lds_audio_encode_read( char* pbuf,  int size )
 {
 	int err; 
 	
@@ -365,7 +365,7 @@ static int lds_ae_read( char* pbuf,  int size )
 * lds_ae_Start()
 *
 *******************************************************************************/
-static int lds_ae_start( void )
+static int lds_audio_encode_start( void )
 {
 	if( bEnable == 0 )
     {
@@ -395,7 +395,7 @@ static int lds_ae_start( void )
 * lds_ae_stop()
 *
 *******************************************************************************/
-static int lds_ae_stop( void )
+static int lds_audio_encode_stop( void )
 {
 	if( bEnable == 0 )
     {
@@ -422,7 +422,7 @@ static int lds_ae_stop( void )
 * lds_ae_open()
 *
 *******************************************************************************/
-static int lds_ae_open( char *dev_name )
+static int lds_audio_encode_open( char *dev_name )
 {
     ptAudio = (LDS_AE_STR*)malloc(sizeof(LDS_AE_STR));
     return 0;
@@ -441,7 +441,7 @@ static int lds_ae_open( char *dev_name )
 * lds_ae_open()
 *
 *******************************************************************************/
-static int lds_ae_close( int dev_fd )
+static int lds_audio_encode_close( int dev_fd )
 {
     if(ptAudio){
         free(ptAudio);
@@ -465,7 +465,7 @@ static int lds_ae_close( int dev_fd )
 * lds_ae_set_volume()
 *
 *******************************************************************************/
-static void lds_ae_set_volume( int volume )
+static void lds_audio_encode_set_volume( int volume )
 {
 	snd_mixer_t *handle;
 	snd_mixer_selem_id_t *sid;
@@ -517,7 +517,7 @@ static void lds_ae_set_volume( int volume )
 * lds_ae_get_volume()
 *
 *******************************************************************************/
-static int lds_ae_get_volume( void)
+static int lds_audio_encode_get_volume( void)
 {
 	int volume = 0;
 	long value;
@@ -575,7 +575,7 @@ static int lds_ae_get_volume( void)
 * lds_ae_mute()
 *
 *******************************************************************************/
-static void lds_ae_mute( int mute )
+static void lds_audio_encode_mute( int mute )
 {
 	snd_mixer_t *handle;
 	snd_mixer_selem_id_t *sid;
@@ -629,7 +629,7 @@ static void lds_ae_mute( int mute )
 * lds_ae_set_mixer_selem_value()
 *
 *******************************************************************************/
-static void lds_ae_set_mixer_selem_value( const char* selem_name, long value )
+static void lds_audio_encode_set_mixer_selem_value( const char* selem_name, long value )
 {
 	snd_mixer_t *handle;
 	snd_mixer_selem_id_t *sid;
@@ -678,7 +678,7 @@ static void lds_ae_set_mixer_selem_value( const char* selem_name, long value )
 * lds_ae_get_mixer_selem_value()
 *
 *******************************************************************************/
-static long lds_ae_get_mixer_selem_value( const char* selem_name )
+static long lds_audio_encode_get_mixer_selem_value( const char* selem_name )
 {
 	long value = 0;
 	snd_mixer_t *handle;
@@ -732,7 +732,7 @@ static long lds_ae_get_mixer_selem_value( const char* selem_name )
 * lds_ae_get_mixer_selem_range()
 *
 *******************************************************************************/
-static void lds_ae_get_mixer_selem_range( const char* selem_name, long* min, long* max )
+static void lds_audio_encode_get_mixer_selem_range( const char* selem_name, long* min, long* max )
 {
 	snd_mixer_t *handle;
 	snd_mixer_selem_id_t *sid;
@@ -782,7 +782,7 @@ static void lds_ae_get_mixer_selem_range( const char* selem_name, long* min, lon
 * lds_ae_set_mixer_selem_switch()
 *
 *******************************************************************************/
-static void lds_ae_set_mixer_selem_switch( const char* selem_name, int value )
+static void lds_audio_encode_set_mixer_selem_switch( const char* selem_name, int value )
 {
 	snd_mixer_t *handle;
 	snd_mixer_selem_id_t *sid;
@@ -817,17 +817,23 @@ static void lds_ae_set_mixer_selem_switch( const char* selem_name, int value )
 	snd_mixer_close(handle);
 }
 
+static int lds_audio_encode_get_error(void)
+{
+	return curr_err_state;
+}
+
 struct LDS_AUDIO_MIC_OPERATION lds_hal_audio_mic = {
-    .name                   =     "lds_hal_audio_mic",
-    .comm.lds_hal_open      = lds_ae_open,
-    .comm.lds_hal_close     = lds_ae_close,
-    .comm.lds_hal_init      = lds_ae_init,
-    .comm.lds_hal_deinit    = lds_ae_deinit,
-    .comm.lds_hal_start     = lds_ae_start,
-    .comm.lds_hal_stop      = lds_ae_stop,
-    .lds_audio_mic_mute         = lds_ae_mute,
-    .lds_audio_mic_set_volume   = lds_ae_set_volume,
-    .lds_audio_mic_get_volume   = lds_ae_get_volume,
-    .lds_audio_mic_read         = lds_ae_read,
+    .name                   	= "lds_hal_audio_mic",
+    .comm.lds_hal_open      	= lds_audio_encode_open,
+    .comm.lds_hal_close     	= lds_audio_encode_close,
+    .comm.lds_hal_init      	= lds_audio_encode_init,
+    .comm.lds_hal_deinit    	= lds_audio_encode_deinit,
+    .comm.lds_hal_start     	= lds_audio_encode_start,
+    .comm.lds_hal_stop      	= lds_audio_encode_stop,
+	.comm.lds_hal_get_error		= lds_audio_encode_get_error,
+    .lds_audio_mic_mute         = lds_audio_encode_mute,
+    .lds_audio_mic_set_volume   = lds_audio_encode_set_volume,
+    .lds_audio_mic_get_volume   = lds_audio_encode_get_volume,
+    .lds_audio_mic_read         = lds_audio_encode_read,
 };
 

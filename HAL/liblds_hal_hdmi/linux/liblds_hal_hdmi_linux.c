@@ -6,8 +6,12 @@
 #include "liblds_hal_hdmi_base.h"
 
 /* Define  -------------------------------------------------------------------*/
-/* Define variable  ----------------------------------------------------------*/
+struct LDS_HDMI_CTX{
+    LDS_HDMI_ErrorNo curr_err_state;
+};
 
+/* Define variable  ----------------------------------------------------------*/
+static struct LDS_HDMI_CTX ctx;
 /* Define extern variable & function  ----------------------------------------*/
 
 
@@ -92,6 +96,19 @@ static int lds_hal_hdmi_stop(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
+static int lds_hal_hdmi_get_error(void)
+{
+    return ctx.curr_err_state;
+}
+
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
 static int lds_hal_hdmi_ioctl(LDS_CTRL_HDMI type, ...)
 {
 	switch(type)
@@ -105,12 +122,13 @@ static int lds_hal_hdmi_ioctl(LDS_CTRL_HDMI type, ...)
 
 
 struct LDS_HDMI_OPERATION lds_hal_hdmi = {
-    .name               = "lds_hal_hdmi",
-    .comm.lds_hal_open  = lds_hal_hdmi_open,
-    .comm.lds_hal_close = lds_hal_hdmi_close,
-    .comm.lds_hal_start = lds_hal_hdmi_start,
-    .comm.lds_hal_stop  = lds_hal_hdmi_stop,
-    .comm.lds_hal_init  = lds_hal_hdmi_init,
-    .comm.lds_hal_deinit= lds_hal_hdmi_deinit,
-    .ioctl              = lds_hal_hdmi_ioctl,
+    .name                   = "lds_hal_hdmi",
+    .comm.lds_hal_open      = lds_hal_hdmi_open,
+    .comm.lds_hal_close     = lds_hal_hdmi_close,
+    .comm.lds_hal_start     = lds_hal_hdmi_start,
+    .comm.lds_hal_stop      = lds_hal_hdmi_stop,
+    .comm.lds_hal_init      = lds_hal_hdmi_init,
+    .comm.lds_hal_deinit    = lds_hal_hdmi_deinit,
+    .comm.lds_hal_get_error = lds_hal_hdmi_get_error,
+    .ioctl                  = lds_hal_hdmi_ioctl,
 };
