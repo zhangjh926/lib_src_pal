@@ -203,6 +203,19 @@ static int  lds_hal_ble_recv_data(char* recv_data)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
+static int  lds_hal_ble_mesh_enable(int onoff)
+{
+    return 0;
+}
+
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
 static int  lds_hal_bluetooth_get_error(void)
 {
     return ctx.curr_err_state;
@@ -224,4 +237,5 @@ struct LDS_BLUETOOTH_OPERATION lds_hal_bluetooth = {
     .lds_hal_ble_start_advertise= lds_hal_ble_start_advertise,
     .lds_hal_ble_send_data      = lds_hal_ble_send_data,
     .lds_hal_ble_recv_data      = lds_hal_ble_recv_data,
+    .lds_hal_ble_mesh_enable    = lds_hal_ble_mesh_enable,
 };
