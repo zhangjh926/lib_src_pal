@@ -49,6 +49,9 @@ endif
 ifeq ($(liblds_hal_usb), y)
 SUBDIRS +=	liblds_hal_usb
 endif
+ifeq ($(liblds_hal_pcie), y)
+SUBDIRS +=	liblds_hal_pcie
+endif
 
 OBJS	:= obj/*.o
 
