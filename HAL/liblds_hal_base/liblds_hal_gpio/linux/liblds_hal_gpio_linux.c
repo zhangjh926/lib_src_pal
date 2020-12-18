@@ -11,32 +11,30 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "../liblds_hal_gpio_base.h"
+#include "liblds_hal_gpio_base.h"
 
 /* Define  -------------------------------------------------------------------*/
-struct LDS_GPIO_CTX
-{
-	void			*ctx;
-	int				pin;
-	int				direction;
-	char			sysfs_file[128];
-	int				status;
-};
-
 /* Define variable  ----------------------------------------------------------*/
 #define GPIO_PINNO_MIN					0
 #define GPIO_PINNO_MAX					159
-#define SYSFS_GPIO_PATH				"/sys/class/gpio"
+#define SYSFS_GPIO_PATH					"/sys/class/gpio"
 
-static struct LDS_GPIO_CTX  *ctx = NULL;
-static int lds_hal_gpio_pin_set(struct LDS_GPIO_CTX *ctx, int pin_num)
+// static struct LDS_GPIO_CTX  *ctx = NULL;
+
+static int lds_hal_gpio_pin_set(LDS_GPIO_CTX *ctx_t, int pin_num)
 {
 	int fd = 0; 
 	int len = 0;
 	char buf[65];
-	char *sysfs_file = ctx->sysfs_file;
+	char *sysfs_file = NULL;
+	LDS_GPIO_CTX *ctx = NULL;
 	memset(buf, 0, 65);
 	
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
+
+	sysfs_file = ctx->sysfs_file;
+
 	if( (pin_num < GPIO_PINNO_MIN) || (pin_num > GPIO_PINNO_MAX) )
 	{
 		printf("[ERROR] gpio num error unknown number %d \n", pin_num);
@@ -48,7 +46,7 @@ static int lds_hal_gpio_pin_set(struct LDS_GPIO_CTX *ctx, int pin_num)
 
 	if( !access(sysfs_file, F_OK) ) 
 	{
-		printf(" gpio%d already initialize.\n", pin_num);
+		//printf(" gpio%d already initialize.\n", pin_num);
 	}
 	else 
 	{
@@ -69,15 +67,19 @@ static int lds_hal_gpio_pin_set(struct LDS_GPIO_CTX *ctx, int pin_num)
 	}
 
 	ctx->pin = pin_num;
-	printf("gpio pin [%d] setting\n", pin_num);
+	//printf("gpio pin [%d] setting\n", pin_num);
 	return 0;
 }
 
-static int lds_hal_gpio_direction(struct LDS_GPIO_CTX *ctx, int direction)
+static int lds_hal_gpio_direction(LDS_GPIO_CTX *ctx_t, int direction)
 {
 	int fd = 0;
 	int len = 0;
 	char buf[148] = {0};
+	LDS_GPIO_CTX *ctx = NULL;
+
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
 
 	if( ctx->pin < 0 )
 	{
@@ -114,11 +116,15 @@ static int lds_hal_gpio_direction(struct LDS_GPIO_CTX *ctx, int direction)
 	return 0;
 }
 
-static int lds_hal_gpio_set_value(struct LDS_GPIO_CTX *ctx,  int set_value)
+static int lds_hal_gpio_set_value(LDS_GPIO_CTX *ctx_t,  int set_value)
 {
 	int fd = 0;
 	int len = 0;
 	char buf[148] = {0};
+	LDS_GPIO_CTX *ctx = NULL;
+
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
 
 	if( ctx->pin < 0 )
 	{
@@ -149,11 +155,15 @@ static int lds_hal_gpio_set_value(struct LDS_GPIO_CTX *ctx,  int set_value)
 	close(fd);
 	return 0;
 }
-static int lds_hal_gpio_get_value(struct LDS_GPIO_CTX *ctx )
+static int lds_hal_gpio_get_value(LDS_GPIO_CTX *ctx_t)
 {
 	int fd = 0;
 	int len = 0;
 	char buf[148] = {0};
+	LDS_GPIO_CTX *ctx = NULL;
+
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
 
 	if( ctx->pin < 0 )
 	{
@@ -177,61 +187,70 @@ static int lds_hal_gpio_get_value(struct LDS_GPIO_CTX *ctx )
 	return atoi(buf);
 }
 
-static int lds_hal_gpio_togle( struct LDS_GPIO_CTX *ctx)
+static int lds_hal_gpio_togle(LDS_GPIO_CTX *ctx_t)
 {
-	if(ctx == NULL)
+	if(ctx_t == NULL)
 	{
 		printf("[ERROR] ctx NULL error lds_gpio_togle\n");
 		return -1;
 	}
 	
-	int curr = lds_hal_gpio_get_value(ctx);
+	int curr = lds_hal_gpio_get_value(ctx_t);
 	
-	lds_hal_gpio_set_value( ctx, !curr);
+	lds_hal_gpio_set_value( ctx_t, !curr);
+
 	return curr;
 }
 
-static int lds_hal_gpio_open( char *dev_name)
+static int lds_hal_gpio_open(void  *ctx_t, void *param)
 {
-	memset( ctx, 0, sizeof(struct LDS_GPIO_CTX));
-
-	/* init value */
-	ctx->pin = -1;
+	if(NULL == ctx_t){
+		return -1;
+	}
 
 	return 0;
 }
 
-static int lds_hal_gpio_start( void)
+static int lds_hal_gpio_start( void *ctx_t)
+{
+	if(NULL == ctx_t){
+		return -1;
+	}
+
+    return 0;
+}
+
+static int lds_hal_gpio_stop( void *ctx_t)
+{
+	if(NULL == ctx_t){
+		return -1;
+	}
+
+    return 0;
+}
+
+static int lds_hal_gpio_init( void *param)
 {
     return 0;
 }
 
-static int lds_hal_gpio_stop( void)
-{
-    return 0;
-}
+static int lds_hal_gpio_deinit( void *ctx_t)
+{	
+	if(NULL == ctx_t) return -1;
 
-static int lds_hal_gpio_init( void)
-{
-    ctx = (struct LDS_GPIO_CTX*)malloc(sizeof(struct LDS_GPIO_CTX));
-    return 0;
-}
-
-static int lds_hal_gpio_deinit( void)
-{
-    if(ctx){
-        free(ctx);
-        ctx = NULL;
-    }
     return 0;
 }
 
 
-static int lds_hal_gpio_close( int dev_fd)
+static int lds_hal_gpio_close( void *ctx_t)
 {
 	int fd = 0;
 	int len = 0;
 	char buf[65];
+	LDS_GPIO_CTX *ctx = NULL;
+
+	if(NULL == ctx_t) return -1;
+	ctx = ctx_t;
 	
 	memset(buf, 0, 65);
 	
@@ -265,12 +284,26 @@ static unsigned int lds_hal_gpio_write( unsigned int pin_num, unsigned int value
 	return 0;
 }
 
-static int lds_hal_gpio_ioctl(LDS_CTRL_GPIO type, ...)
+static int lds_hal_gpio_get_error(void *ctx_t)
 {
-	int ret = 0;	
+	LDS_GPIO_CTX *ctx = NULL;
+	
+	if(NULL == ctx_t ) return -1;
+	else ctx = ctx_t;
+
+	return ctx->curr_err_state;
+}
+
+static int lds_hal_gpio_ioctl(LDS_GPIO_CTX *ctx_t, LDS_CTRL_GPIO type, ...)
+{
+	int ret = 0;
+	LDS_GPIO_CTX *ctx = NULL;
 	/* check maxctrl */
 	if (type >= LDS_CTRL_GPIO_MAX)
 		return ret;
+
+	if(NULL == ctx_t) return -1;
+	ctx = ctx_t;
 
 	/* Parse multi param */
 	va_list ctrl;
@@ -319,14 +352,10 @@ static int lds_hal_gpio_ioctl(LDS_CTRL_GPIO type, ...)
 
 struct LDS_GPIO_OPERATION lds_hal_gpio = {
 		.name			        = "lds_hal_gpio",
-		.ctxsize			    = sizeof(struct LDS_GPIO_CTX),
-		.maxctrl			    = LDS_CTRL_GPIO_MAX,
-
-		.comm.lds_hal_open	    = lds_hal_gpio_open,
-		.comm.lds_hal_close	    = lds_hal_gpio_close,
-		.comm.lds_hal_start     = lds_hal_gpio_start,
-		.comm.lds_hal_stop      = lds_hal_gpio_stop,
-		.comm.lds_hal_init      = lds_hal_gpio_init,
-		.comm.lds_hal_deinit    = lds_hal_gpio_deinit,
+		.base.lds_hal_open	    = lds_hal_gpio_open,
+		.base.lds_hal_close	    = lds_hal_gpio_close,
+		.base.lds_hal_start     = lds_hal_gpio_start,
+		.base.lds_hal_stop      = lds_hal_gpio_stop,
+		.base.lds_hal_get_error = lds_hal_gpio_get_error,
 		.ioctl			        = lds_hal_gpio_ioctl,
 };

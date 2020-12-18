@@ -12,14 +12,20 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/resource.h>
+#include <pthread.h>
 
 #include "liblds_hal_audio_speaker_base.h"
 
+#define MAX_NUM_DEVICES	256
+
 static snd_pcm_uframes_t buffer_size;
 static snd_pcm_uframes_t period_size;
-static LDS_AD_STR *ptAudio = NULL;
+static LDS_AD_CTX *ptAudio = NULL;
+static LDS_AD_CTX *ptAudioArray[MAX_NUM_DEVICES] = {0};
+static pthread_mutex_t SpkArrayLock = PTHREAD_MUTEX_INITIALIZER;
 /* define and enums - Andy */
 static int bEnable = 0 ;
+// static LDS_AUDIO_DECODE_ErrorNo curr_err_state;
 
 /********************************************************************************
 *	Description		: stop PCM device after PB finished.
@@ -28,7 +34,7 @@ static int bEnable = 0 ;
 *	Modify			: 
 *	warning			:
 ********************************************************************************/
-void lds_audio_speaker_output_play_sync( void )
+void lds_audio_speaker_output_play_sync( pLDS_AD_CTX ptAudio )
 {
 	int ret = 0;;
 
@@ -46,7 +52,7 @@ void lds_audio_speaker_output_play_sync( void )
 *	Modify			: 2012-07-19(thr)
 *	warning			:
 *******************************************************************************/
-void lds_auido_speaker_output_play_stop( void )
+void lds_auido_speaker_output_play_stop( pLDS_AD_CTX ptAudio )
 {
 	int ret = 0;
 
@@ -63,7 +69,7 @@ void lds_auido_speaker_output_play_stop( void )
 * __set_sw_params()
 *
 *******************************************************************************/
-static int __set_sw_params( void )
+static int __set_sw_params( pLDS_AD_CTX ptAudio )
 {
 	int	err;
 
@@ -140,7 +146,7 @@ static int __set_sw_params( void )
 * __set_hw_params()
 *
 *******************************************************************************/
-static int __set_hw_params( void )
+static int __set_hw_params( pLDS_AD_CTX ptAudio )
 {
 	int err;
 	
@@ -240,6 +246,7 @@ static int __set_hw_params( void )
 	return err;
 }
 
+#if 0
 /******************************************************************************
 * @desc
 * alsa playback init
@@ -254,7 +261,7 @@ static int __set_hw_params( void )
 * lds_audio_speaker_Init()
 *
 *******************************************************************************/
-int lds_audio_speaker_init( void)
+int lds_audio_speaker_init( void *param)
 {
 	int err = 0;
 
@@ -272,7 +279,7 @@ int lds_audio_speaker_init( void)
 	}
 
 	// set hw parameter
-	if ((err = __set_hw_params()) < 0) 
+	if ((err = __set_hw_params(ptAudio)) < 0) 
 	{
 		fprintf(stderr, ">>>>> [%s:%d]: Setting of hw params failed(%s)\n", __FILE__, __LINE__, snd_strerror(err));
 		return err;
@@ -281,7 +288,7 @@ int lds_audio_speaker_init( void)
 	// set sw parameter
 	if ( ptAudio->sw_param_enable )
 	{
-		if ((err = __set_sw_params()) < 0) 
+		if ((err = __set_sw_params(ptAudio)) < 0) 
 		{
 			fprintf(stderr, ">>>>> [%s:%d]: Setting of sw params failed(%s)\n", __FILE__, __LINE__, snd_strerror(err));
 			return err;
@@ -311,6 +318,7 @@ int lds_audio_speaker_init( void)
 * lds_audio_speaker_deinit()
 *
 *******************************************************************************/
+
 int lds_audio_speaker_deinit( void )
 {
     if( bEnable == 0 )
@@ -319,6 +327,10 @@ int lds_audio_speaker_deinit( void )
     	return -1;
     }
 
+    pLDS_AD_CTX ptAudio;
+
+    if(NULL == ctx_t) return -1;
+    else ptAudio = ctx_t;
 #if 0 // Not used.
 	/*
 	* There are two ways of allocating such structures:
@@ -345,6 +357,72 @@ int lds_audio_speaker_deinit( void )
 
 /******************************************************************************
 * @desc
+* alsa playback deinit
+*
+* @parm_in
+* int 	:  dev_fd
+*
+* @return   
+* void
+*
+* @func
+* lds_audio_speaker_deinit()
+*
+*******************************************************************************/
+int lds_audio_speaker_deinit( void *ctx_t )
+{
+	if(NULL == ctx_t) return -1;
+	else ptAudio =  ctx_t;
+
+	if( ptAudioArray[ptAudio->dev_fd]->bEnable == 0 )
+	{
+		fprintf( stdout, "[%s:%d] you have to call NCL_AD_DeInit first time!\n", __FILE__, __LINE__ );
+		return -1;
+	}
+
+	if(ptAudioArray[ptAudio->dev_fd]->phandle != NULL)
+	{
+		snd_pcm_drain(ptAudioArray[ptAudio->dev_fd]->phandle);
+		snd_pcm_close(ptAudioArray[ptAudio->dev_fd]->phandle);
+
+		ptAudioArray[ptAudio->dev_fd]->phandle = 0;
+		ptAudioArray[ptAudio->dev_fd]->bEnable = 0;
+	}
+	
+	return 0;
+}
+#endif
+
+/******************************************************************************
+* @desc
+* alsa: get single frame data length
+*
+* @parm_in
+* ptAudio	: struct _LDS_AD_STR
+* pbuf		: write buff
+* size		: wirte size
+*
+* @return   
+* success(0), fail(-1)
+*
+* @func
+* lds_audio_speaker_write()
+*
+*******************************************************************************/
+static int lds_audio_speaker_per_frame_bytes(snd_pcm_format_t format)
+{
+	int retVal = -1;
+	
+	if(format > SND_PCM_FORMAT_UNKNOWN)
+	{
+		retVal = snd_pcm_format_width(format)/8;
+	}
+	
+	return retVal;
+}
+
+/******************************************************************************
+* @desc
 * alsa playback data write
 *
 * @parm_in
@@ -359,27 +437,34 @@ int lds_audio_speaker_deinit( void )
 * lds_audio_speaker_write()
 *
 *******************************************************************************/
-int lds_audio_speaker_write( char* pbuf,  unsigned int size )
+int lds_audio_speaker_write( pLDS_AD_CTX ptAudio,char* pbuf,  unsigned int size )
 {
 	int err; 
 	snd_pcm_sframes_t avail;
  
-   	if( bEnable == 0 )
-    {
-    	fprintf( stdout, "[%s:%d] you have to call NCL_AD_Init first time!\n", __FILE__, __LINE__ );
-    	return 0;
-    }
+   	if( ptAudio->bEnable == 0 )
+	{
+		fprintf( stdout, "[%s:%d] you have to call NCL_AD_Init first time!\n", __FILE__, __LINE__ );
+		ptAudio->curr_err_state = LDS_AUDIO_DECODE_WRITE_ERROR;
+		
+		return -1;
+	}
 
 	if( ptAudio->phandle == NULL )
+	{
+		ptAudio->curr_err_state = LDS_AUDIO_DECODE_WRITE_ERROR;
 		return -1;
+	}
 
 	if( (err = snd_pcm_state(ptAudio->phandle)) == SND_PCM_STATE_SETUP )
 	{
 		fprintf(stderr, ">>>>> [%s:%d]: stop state(%d)\n", __FILE__, __LINE__, err);
+		ptAudio->curr_err_state = LDS_AUDIO_DECODE_WRITE_ERROR;
+		
 		return -1;
 	}
 
-	size = (size / ptAudio->channel_num / ptAudio->bit_per_sample); 
+	size = (size / ptAudio->channel_num / ptAudio->byte_per_sample); 
 	while(size > 0)
 	{
 		avail = snd_pcm_avail_update(ptAudio->phandle);
@@ -397,10 +482,14 @@ int lds_audio_speaker_write( char* pbuf,  unsigned int size )
 		{
 			// Write interleaved frames to a PCM.
 			if( ptAudio->acccess == SND_PCM_ACCESS_RW_INTERLEAVED )
+			{
 				err = snd_pcm_writei( ptAudio->phandle, pbuf, size );
+			}
 			// Write interleaved frames to a PCM using direct buffer (mmap)
 			else if( ptAudio->acccess == SND_PCM_ACCESS_MMAP_INTERLEAVED )
+			{
 				err = snd_pcm_mmap_writei( ptAudio->phandle, pbuf, size );
+			}
 			
 			if( err == -EPIPE || err == -EBADFD)
 			{
@@ -413,7 +502,7 @@ int lds_audio_speaker_write( char* pbuf,  unsigned int size )
 				snd_pcm_recover( ptAudio->phandle, err, 1 );
 			}else if( (uint32_t)err <= size ){ 
 				size -= err;
-				pbuf += (err * ptAudio->channel_num * ptAudio->bit_per_sample); 
+				pbuf += (err * ptAudio->channel_num * ptAudio->byte_per_sample); 
 			}
 		}
 	}
@@ -421,13 +510,103 @@ int lds_audio_speaker_write( char* pbuf,  unsigned int size )
 	return 0;
 }
 
-int lds_audio_speaker_open(char *dev_name)
+int lds_audio_speaker_open(void  *ctx_t, void *param)
 {
-    return 0;
+	int err = 0;
+	//int index = 0;
+	
+	pLDS_AD_PARAM spk_param = (pLDS_AD_PARAM)param;
+	pLDS_AD_CTX spk_ctx = (pLDS_AD_CTX)ctx_t;
+
+	if(!param)
+	{
+		return -1;
+	}
+	
+	if(!ctx_t)
+	{
+		return -1;
+	}
+	else
+	{
+		if(0 == spk_ctx->bEnable)
+		{
+			memcpy(spk_ctx->device, spk_param->device, 128);
+			
+			spk_ctx->pcm_format = spk_param->pcm_format;
+			spk_ctx->sampling_rate =  spk_param->sampling_rate;
+			spk_ctx->byte_per_sample = spk_param->byte_per_sample;
+			spk_ctx->channel_num  = spk_param->channel_num;
+			spk_ctx->buffer_time = spk_param->buffer_time;
+			spk_ctx->period_time = spk_param->period_time;
+			
+			// opens a PCM (Playback)
+			if ((err = snd_pcm_open(&(spk_ctx->phandle), spk_ctx->device, SND_PCM_STREAM_PLAYBACK, 0)) < 0) 
+			{
+				fprintf(stderr, ">>>>> [%s:%d]: cannot open audio device(%s)\n", __FILE__, __LINE__, snd_strerror(err));
+				spk_ctx->curr_err_state = LDS_AUDIO_DECODE_OPEN_ERROR;
+				
+				return -1;
+			}
+
+			// set hw parameter
+			if ((err = __set_hw_params(spk_ctx)) < 0) 
+			{
+				fprintf(stderr, ">>>>> [%s:%d]: Setting of hw params failed(%s)\n", __FILE__, __LINE__, snd_strerror(err));
+				snd_pcm_close(spk_ctx->phandle);
+				spk_ctx->curr_err_state = LDS_AUDIO_DECODE_OPEN_ERROR;
+				
+				return -1;
+			}	
+
+			// set sw parameter
+			if ( ptAudio->sw_param_enable )
+			{
+				if ((err = __set_sw_params(spk_ctx)) < 0) 
+				{
+					fprintf(stderr, ">>>>> [%s:%d]: Setting of sw params failed(%s)\n", __FILE__, __LINE__, snd_strerror(err));
+					snd_pcm_close(spk_ctx->phandle);
+					spk_ctx->curr_err_state = LDS_AUDIO_DECODE_OPEN_ERROR;
+					
+					return -1;
+				}
+			}
+
+			snd_pcm_drop(spk_ctx->phandle);
+	
+			spk_ctx->bEnable = 1;
+		}
+		else
+		{
+			fprintf( stdout, "[%s:%d] spk ctx bEnable != 0 !\n", __FILE__, __LINE__ );
+			return 0;
+		}
+	}
 }
 
-int lds_audio_speaker_close(int dev_fd)
+int lds_audio_speaker_close(void *ctx_t)
 {
+	if(NULL == ctx_t)
+	{
+		return -1;
+	}
+	else
+	{
+		pLDS_AD_CTX spk_ctx = (pLDS_AD_CTX)ctx_t;
+		if(spk_ctx->phandle)
+		{
+			snd_pcm_close(spk_ctx->phandle);
+			spk_ctx->phandle = NULL;
+			spk_ctx->bEnable = 0;
+		}
+		else
+		{
+			spk_ctx->curr_err_state = LDS_AUDIO_DECODE_CLOSE_ERROR;
+			fprintf( stdout, "[%s:%d] spk ctx phandle == 0 !\n", __FILE__, __LINE__ );
+			return -1;
+		}
+	}
+
     return 0;
 }
 
@@ -445,18 +624,32 @@ int lds_audio_speaker_close(int dev_fd)
 * lds_audio_speaker_start()
 *
 *******************************************************************************/
-int lds_audio_speaker_start( void )
+int lds_audio_speaker_start( void *ctx_t)
 {
-	if( bEnable == 0 )
+	pLDS_AD_CTX spk_ctx = (pLDS_AD_CTX)ctx_t;
+	
+	if(NULL == ctx_t)
 	{
-	    fprintf( stdout, "[%s:%d] you have to call NCL_AD_Init first time!\n", __FILE__, __LINE__ );
-	    return -1;
+		return -1;
 	}
+	else
+	{	
+		if( spk_ctx->bEnable == 0 )
+		{
+			fprintf( stdout, "[%s:%d] you have to call NCL_AD_Init first time!\n", __FILE__, __LINE__ );
+			spk_ctx->curr_err_state = LDS_AUDIO_DECODE_START_ERROR;
 
-	if(ptAudio->phandle == NULL)
-	    return -1;
+			return -1;
+		}
 
-	snd_pcm_prepare(ptAudio->phandle);
+		if(spk_ctx->phandle == NULL)
+		{
+			spk_ctx->curr_err_state = LDS_AUDIO_DECODE_START_ERROR;
+			return -1;
+		}
+
+		snd_pcm_prepare(spk_ctx->phandle);
+	}
 
     return 0;
 }
@@ -475,20 +668,33 @@ int lds_audio_speaker_start( void )
 * lds_audio_speaker_stop()
 *
 *******************************************************************************/
-int lds_audio_speaker_stop( void )
+int lds_audio_speaker_stop( void *ctx_t)
 {
-    if( bEnable == 0 )
-    {
-    	fprintf( stdout, "[%s:%d] you have to call NCL_AD_Init first time!\n", __FILE__, __LINE__ );
-    	return -1;
-    }
+	pLDS_AD_CTX spk_ctx = (pLDS_AD_CTX)ctx_t;
 
-	if(ptAudio->phandle == NULL)
+	if(NULL == spk_ctx) 
+	{
 		return -1;
+	}
+	else
+	{
+		if( spk_ctx->bEnable == 0 )
+		{
+			fprintf( stdout, "[%s:%d] you have to call NCL_AD_Init first time!\n", __FILE__, __LINE__ );
+			spk_ctx->curr_err_state = LDS_AUDIO_DECODE_STOP_ERROR;
 
-	snd_pcm_drop(ptAudio->phandle);
+			return -1;
+		}
 
-    return 0;
+		if(spk_ctx->phandle == NULL)
+		{
+			spk_ctx->curr_err_state = LDS_AUDIO_DECODE_STOP_ERROR;
+			return -1;
+		}
+
+		snd_pcm_drop(spk_ctx->phandle);
+	}
+	return 0;
 }
 
 /******************************************************************************
@@ -506,23 +712,29 @@ int lds_audio_speaker_stop( void )
 * lds_audio_speaker_set_volume()
 *
 *******************************************************************************/
-void lds_audio_speaker_set_volume( int volume )
+int lds_audio_speaker_set_volume( pLDS_AD_CTX ptAudio, int volume)
 {
 	snd_mixer_t *handle;
 	snd_mixer_selem_id_t *sid;
-	const char* card = "default";
+	//const char* card = "default";
 
-     if( bEnable == 0 )
-     {
-    	fprintf( stdout, "[%s:%d] you have to call LDS_AD_Init first time!\n", __FILE__, __LINE__ );
-    	return;
-     }
+	 if( ptAudio->bEnable == 0 )
+	 {
+	    	fprintf( stdout, "[%s:%d] you have to call LDS_AD_Init first time!\n", __FILE__, __LINE__ );
+		ptAudio->curr_err_state = LDS_AUDIO_DECODE_SET_VOLUME_ERROR;
+		
+	    	return -1;
+	 }
 
 	if(ptAudio->vol_selem == NULL)
-		return;
+	{
+		ptAudio->curr_err_state = LDS_AUDIO_DECODE_SET_VOLUME_ERROR;
+		
+		return -1;
+	}
 
 	snd_mixer_open(&handle, 0);
-	snd_mixer_attach(handle, card);
+	snd_mixer_attach(handle, ptAudio->device);
 	snd_mixer_selem_register(handle, NULL, NULL);
 	snd_mixer_load(handle);
 
@@ -536,13 +748,18 @@ void lds_audio_speaker_set_volume( int volume )
 		//snd_mixer_selem_set_playback_volume( elem, 0 , volume );
 		snd_mixer_selem_set_playback_volume_all( elem, volume );
 		//fprintf( stdout, ">>>>> [%s:%d] set volume(%d)\n", __FILE__, __LINE__, volume);
+		snd_mixer_close(handle);
+		
+		return 0;
 	}
 	else
 	{
 		fprintf( stderr, ">>>>> [%s:%d] find elem fail\n", __FILE__, __LINE__);
+		ptAudio->curr_err_state = LDS_AUDIO_DECODE_SET_VOLUME_ERROR;
+		snd_mixer_close(handle);
+		
+		return -1;
 	}
-	
-	snd_mixer_close(handle);
 }
 
 /******************************************************************************
@@ -559,25 +776,29 @@ void lds_audio_speaker_set_volume( int volume )
 * lds_audio_speaker_get_volume()
 *
 *******************************************************************************/
-int lds_audio_speaker_get_volume( void )
+int lds_audio_speaker_get_volume( pLDS_AD_CTX ptAudio, int* volume)
 {
-	int volume = 0;
+	//int volume = 0;
 	long value;
 	snd_mixer_t *handle;
 	snd_mixer_selem_id_t *sid;
-	const char* card = "default";	
+	//const char* card = "default";	
 
-     if( bEnable == 0 )
-     {
-    	fprintf( stdout, "[%s:%d] you have to call NCL_AD_Init first time!\n", __FILE__, __LINE__ );
-    	return 0;
-     }
+	 if( ptAudio->bEnable == 0 )
+	 {
+		fprintf( stdout, "[%s:%d] you have to call NCL_AD_Init first time!\n", __FILE__, __LINE__ );
+		ptAudio->curr_err_state = LDS_AUDIO_DECODE_GET_VOLUME_ERROR;
+		
+		return -1;
+	 }
 
 	if(ptAudio->vol_selem == NULL)
-		return volume;
-
+	{
+		return -1;
+	}
+	
 	snd_mixer_open(&handle, 0);
-	snd_mixer_attach(handle, card);
+	snd_mixer_attach(handle, ptAudio->device);
 	snd_mixer_selem_register(handle, NULL, NULL);
 	snd_mixer_load(handle);
 
@@ -589,17 +810,20 @@ int lds_audio_speaker_get_volume( void )
 	if(elem)
 	{
 		snd_mixer_selem_get_playback_volume(elem, 0, &value);
-		volume = (unsigned int)value;
+		*volume = (unsigned int)value;
 		//fprintf( stdout, ">>>>> [%s:%d] get volume(%d)\n", __FILE__, __LINE__, volume);
+		snd_mixer_close(handle);
+		
+		return 0;
 	}
 	else
 	{
 		fprintf( stderr, ">>>>> [%s:%d] find elem fail\n", __FILE__, __LINE__);
+		ptAudio->curr_err_state = LDS_AUDIO_DECODE_GET_VOLUME_ERROR;
+		snd_mixer_close(handle);
+		
+		return -1;
 	}
-	
-	snd_mixer_close(handle);
-
-	return volume;
 }
 
 /******************************************************************************
@@ -617,23 +841,27 @@ int lds_audio_speaker_get_volume( void )
 * lds_audio_speaker_mute()
 *
 *******************************************************************************/
-void lds_audio_speaker_mute( int mute )
+int lds_audio_speaker_mute( pLDS_AD_CTX ptAudio, int mute )
 {
 	snd_mixer_t *handle;
 	snd_mixer_selem_id_t *sid;
-	const char* card = "default";	
+	//const char* card = "default";	
 
-     if( bEnable == 0 )
-     {
-    	fprintf( stdout, "[%s:%d] you have to call NCL_AD_Init first time!\n", __FILE__, __LINE__ );
-    	return;
-     }
+	 if( ptAudio->bEnable == 0 )
+	 {
+		fprintf( stdout, "[%s:%d] you have to call NCL_AD_Init first time!\n", __FILE__, __LINE__ );
+		ptAudio->curr_err_state = LDS_AUDIO_DECODE_MUTE_ERROR;
+		return -1;
+	 }
 
 	if(ptAudio->vol_mute_selem == NULL)
-		return;
-		
+	{
+		ptAudio->curr_err_state = LDS_AUDIO_DECODE_MUTE_ERROR;
+		return -1;
+	}
+	
 	snd_mixer_open(&handle, 0);
-	snd_mixer_attach(handle, card);
+	snd_mixer_attach(handle, ptAudio->device);
 	snd_mixer_selem_register(handle, NULL, NULL);
 	snd_mixer_load(handle);
 
@@ -646,13 +874,18 @@ void lds_audio_speaker_mute( int mute )
 	{
 		snd_mixer_selem_set_playback_switch( elem, 0 , mute );
 		//fprintf( stdout, ">>>>> [%s:%d] Mute (%s)\n", __FILE__, __LINE__, mute?"ON":"OFF");
+		snd_mixer_close(handle);
+
+		return 0;
 	}
 	else
 	{
 		fprintf( stderr, ">>>>> [%s:%d] find elem fail\n", __FILE__, __LINE__);
+		ptAudio->curr_err_state = LDS_AUDIO_DECODE_MUTE_ERROR;
+		snd_mixer_close(handle);
+		
+		return -1;
 	}
-	
-	snd_mixer_close(handle);
 }
 
 
@@ -860,17 +1093,31 @@ void lds_audio_speaker_set_mixer_selem_switch( const char* selem_name, int value
 	snd_mixer_close(handle);
 }
 
-struct LDS_AUDIO_SPEAKER_OPERATION lds_hal_audio_spk = {
-    .name               = "lds_hal_audio_spk",
-    .comm.lds_hal_open  = lds_audio_speaker_open,
-    .comm.lds_hal_close = lds_audio_speaker_close,
-    .comm.lds_hal_init  = lds_audio_speaker_init,
-    .comm.lds_hal_deinit= lds_audio_speaker_deinit,
-    .comm.lds_hal_start = lds_audio_speaker_start,
-    .comm.lds_hal_stop  = lds_audio_speaker_stop,
+static int lds_audio_speaker_get_error(void *ctx_t)
+{
+	pLDS_AD_CTX spk_ctx = (pLDS_AD_CTX)ctx_t;
+	if(NULL == spk_ctx)
+	{
+		//spk_ctx->curr_err_state = LDS_AUDIO_DECODE_GET_ERROR;
+		return -1;
+	}
+	else 
+	{
+		return spk_ctx->curr_err_state;
+	}
+}
 
-    .lds_audio_spk_write        = lds_audio_speaker_write,
-    .lds_audio_spk_get_volume   = lds_audio_speaker_get_volume,
-    .lds_audio_spk_set_volume   = lds_audio_speaker_set_volume,
-    .lds_audio_spk_mute         = lds_audio_speaker_mute,
+struct LDS_AUDIO_SPEAKER_OPERATION lds_hal_audio_spk = {
+	.name               			= "lds_hal_audio_spk",
+	.base.lds_hal_open  		= lds_audio_speaker_open,
+	.base.lds_hal_close 		= lds_audio_speaker_close,
+	.base.lds_hal_start 			= lds_audio_speaker_start,
+	.base.lds_hal_stop  		= lds_audio_speaker_stop,
+	.base.lds_hal_get_error		= lds_audio_speaker_get_error,
+
+	.lds_audio_spk_per_frame_bytes = lds_audio_speaker_per_frame_bytes,
+	.lds_audio_spk_write     	= lds_audio_speaker_write,
+	.lds_audio_spk_get_volume   = lds_audio_speaker_get_volume,
+	.lds_audio_spk_set_volume   = lds_audio_speaker_set_volume,
+	.lds_audio_spk_mute         	= lds_audio_speaker_mute,
 };

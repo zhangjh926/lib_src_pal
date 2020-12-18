@@ -7,11 +7,10 @@
 
 /* Define  -------------------------------------------------------------------*/
 /* Define variable  ----------------------------------------------------------*/
-
+static LDS_USB_UVC_CTX *ctx = NULL;
 /* Define extern variable & function  ----------------------------------------*/
 
 
-
 /*******************************************************************************
 *	Description		:
 *	Argurments		:
@@ -19,8 +18,11 @@
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_usb_uvc_open(char *dev_name)
+static int lds_hal_usb_uvc_open(void *ctx_t, void *param)
 {
+    if(NULL == ctx_t) return -1;
+    else ctx = ctx_t;
+
     return 0;
 }
 
@@ -32,7 +34,22 @@ static int lds_hal_usb_uvc_open(char *dev_name)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_usb_uvc_close(int dev_fd)
+static int lds_hal_usb_uvc_close(void *ctx_t)
+{
+    if(NULL == ctx_t) return -1;
+    else ctx = ctx_t;
+
+    return 0;
+}
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int lds_hal_usb_uvc_init(void *param)
 {
     return 0;
 }
@@ -44,8 +61,11 @@ static int lds_hal_usb_uvc_close(int dev_fd)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_usb_uvc_init(void)
+static int lds_hal_usb_uvc_deinit(void *ctx_t)
 {
+    if(NULL == ctx_t) return -1;
+    else ctx = ctx_t;
+
     return 0;
 }
 
@@ -56,8 +76,11 @@ static int lds_hal_usb_uvc_init(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_usb_uvc_deinit(void)
+static int lds_hal_usb_uvc_start(void *ctx_t)
 {
+    if(NULL == ctx_t) return -1;
+    else ctx = ctx_t;
+
     return 0;
 }
 
@@ -68,8 +91,11 @@ static int lds_hal_usb_uvc_deinit(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_usb_uvc_start(void)
+static int lds_hal_usb_uvc_stop(void *ctx_t)
 {
+    if(NULL == ctx_t) return -1;
+    else ctx = ctx_t;
+
     return 0;
 }
 
@@ -80,9 +106,12 @@ static int lds_hal_usb_uvc_start(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_usb_uvc_stop(void)
+static int lds_hal_usb_uvc_get_error(void *ctx_t)
 {
-    return 0;
+    if(NULL == ctx_t) return -1;
+    else ctx = ctx_t;
+
+    return ctx->curr_err_state;
 }
 
 /*******************************************************************************
@@ -92,10 +121,11 @@ static int lds_hal_usb_uvc_stop(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_usb_uvc_ioctl(LDS_CTRL_USB_UVC type, ...)
+static int lds_hal_usb_uvc_ioctl(LDS_USB_UVC_CTX *ctx, LDS_CTRL_USB_UVC type, ...)
 {
-	switch(type)
-	{
+    if(NULL == ctx) return -1;
+
+	switch(type){
 		default:
 			break;
 	}
@@ -105,12 +135,11 @@ static int lds_hal_usb_uvc_ioctl(LDS_CTRL_USB_UVC type, ...)
 
 
 struct LDS_USB_UVC_OPERATION lds_hal_usb_uvc = {
-    .name               = "lds_hal_usb_uvc",
-    .comm.lds_hal_open  = lds_hal_usb_uvc_open,
-    .comm.lds_hal_close = lds_hal_usb_uvc_close,
-    .comm.lds_hal_start = lds_hal_usb_uvc_start,
-    .comm.lds_hal_stop  = lds_hal_usb_uvc_stop,
-    .comm.lds_hal_init  = lds_hal_usb_uvc_init,
-    .comm.lds_hal_deinit= lds_hal_usb_uvc_deinit,
-    .ioctl              = lds_hal_usb_uvc_ioctl,
+    .name                   = "lds_hal_usb_uvc",
+    .base.lds_hal_open      = lds_hal_usb_uvc_open,
+    .base.lds_hal_close     = lds_hal_usb_uvc_close,
+    .base.lds_hal_start     = lds_hal_usb_uvc_start,
+    .base.lds_hal_stop      = lds_hal_usb_uvc_stop,
+    .base.lds_hal_get_error = lds_hal_usb_uvc_get_error,
+    .ioctl                  = lds_hal_usb_uvc_ioctl,
 };

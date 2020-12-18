@@ -12,8 +12,7 @@ export BUILD_VERBOSE Q
 ifndef PROJ_HOME
 
 PROJ_HOME	= `pwd`
-TOP		= ../../../
-
+TOP		= 	$(OUTPUT_HAL_BASE_PREFIX)
 CC		=	$(CROSS_TOOL)gcc
 LD		=	$(CROSS_TOOL)ld
 AR		=	$(CROSS_TOOL)ar cqs
@@ -26,11 +25,11 @@ ECHO	=	@echo
 CTAG	=	@ctags -R
 
 
-TARGET_DIR = $(TOP)/lib/
+TARGET_DIR = $(TOP)/HAL/lib/
 
 INCPATH   = -I./
 INCPATH  += -I./linux
-INCPATH  += -I$(TOP)/include
+INCPATH  += -I$(TOP)/HAL/include
 INCPATH  += -I../../
 
 endif
@@ -84,13 +83,14 @@ endif
 	$(Q)$(CC) 	-shared -o $(TARGET).so $(OBJECTS)
 
 install:	$(TARGET)
-	$(CP)		$(TARGET).a $(TARGET_DIR)
-	$(STRIP)		$(TARGET).so
+	#$(CP)		$(TARGET).a $(TARGET_DIR)
+	$(STRIP)	$(TARGET).so
 	$(CP)		$(TARGET).so $(TARGET_DIR)
-	$(CP)		$(HEADERS) $(TOP)/include
+	$(CP)		$(HEADERS) $(TOP)/HAL/include
+	$(CP)		$(OBJECTS) $(TOP)/HAL/obj
 	@echo 		"Install.......	[OK]"
 
 clean:
-	$(RM)		$(OBJECTS) $(TARGET) *~ tags
+	$(RM)		$(OBJECTS) $(TARGET) *~ tags *.so *.a *.dpend
 	$(ECHO)		"Cleaning......   [OK]"
 

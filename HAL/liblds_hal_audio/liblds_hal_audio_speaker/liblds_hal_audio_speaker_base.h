@@ -10,7 +10,6 @@ extern "C"{
 #define LINUX 1
 
 #ifdef LINUX
-#include <stdint.h>
 #include <alsa/asoundlib.h>
 #endif
 
@@ -22,20 +21,52 @@ extern "C"{
 /********************************************************************************
 *                              ENUMERATION
 *********************************************************************************/
+typedef enum   _LDS_AD_ErrorNo{
+	LDS_AUDIO_DECODE_OPEN_ERROR = 200,
+	LDS_AUDIO_DECODE_CLOSE_ERROR,
+	LDS_AUDIO_DECODE_INIT_ERROR,
+	LDS_AUDIO_DECODE_START_ERROR,
+	LDS_AUDIO_DECODE_STOP_ERROR,
+	LDS_AUDIO_DECODE_WRITE_ERROR,
+	LDS_AUDIO_DECODE_SET_HW_ERROR,
+	LDS_AUDIO_DECODE_SET_SW_ERROR,
+	LDS_AUDIO_DECODE_GET_VOLUME_ERROR,
+	LDS_AUDIO_DECODE_SET_VOLUME_ERROR,
+	LDS_AUDIO_DECODE_MUTE_ERROR
+}LDS_AUDIO_DECODE_ErrorNo;
 
+typedef struct _LDS_AD_PARAM
+{	
+	char	device[128];
+	
+	unsigned int	pcm_format;
+	unsigned int 	sampling_rate;
+	unsigned int 	sampling_frames;
+	unsigned int 	byte_per_sample;
+	unsigned int 	channel_num;
+	
+	unsigned int 	buffer_time;
+	unsigned int 	period_time;
+	
+}LDS_AD_PARAM, *pLDS_AD_PARAM;
 
 /********************************************************************************
 *                              STRUCTURE-external
 *********************************************************************************/
-typedef struct _LDS_AD_STR
+
+typedef struct _LDS_AD_CTX
 {
-	const char*			device;
-	const char*			vol_selem;
-	const char*			vol_mute_selem;
+	char				device[128];
+	int 				dev_fd;
+	char				vol_selem[128]; 	 //reserved
+	char				vol_mute_selem[128]; //reserved
 	
+	unsigned int        bEnable;
+
 	unsigned int		pcm_format;
 	unsigned int 		sampling_rate;
-	unsigned int		bit_per_sample;
+	unsigned int 		sampling_frames;
+	unsigned int		byte_per_sample;
 	unsigned int		buffer_time;
 	unsigned int		period_time;
 	unsigned int		channel_num;
@@ -52,20 +83,22 @@ typedef struct _LDS_AD_STR
 	void 				*hw_params;
 	void 				*sw_params;
 	#endif
-} LDS_AD_STR;
+	LDS_AUDIO_DECODE_ErrorNo curr_err_state;
+} LDS_AD_CTX, *pLDS_AD_CTX;
 
 /********************************************************************************
 *                             EXTERN FUNCTIONS
 *********************************************************************************/
 
-struct LDS_AUDIO_SPEAKER_OPERATION{
-    struct LDS_HAL_COMMON comm;
-    const char *name;
-    
-    int		(*lds_audio_spk_write)(char* pbuf,  unsigned int size );
-    int		(*lds_audio_spk_get_volume)(void );
-    void	(*lds_audio_spk_set_volume)(int volume );
-    void 	(*lds_audio_spk_mute)(int mute );
+struct LDS_AUDIO_SPEAKER_OPERATION{
+
+    struct 	LDS_HAL_COMMON 	base;
+    const 	char 		 	*name;
+    int 	(*lds_audio_spk_per_frame_bytes)(snd_pcm_format_t format);
+    int	(*lds_audio_spk_write)(pLDS_AD_CTX ctx, char* pbuf,  unsigned int size );
+    int	(*lds_audio_spk_get_volume)(pLDS_AD_CTX ctx, int* volume );
+    int	(*lds_audio_spk_set_volume)(pLDS_AD_CTX ctx, int volume );
+    int 	(*lds_audio_spk_mute)(pLDS_AD_CTX ctx, int mute );
     
 };
 

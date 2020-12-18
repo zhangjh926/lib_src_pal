@@ -6,7 +6,12 @@
 extern "C"{
 #endif
 
-/* Header file include --------------------------------------------------*/
+typedef enum   _LDS_RTC_ErrorNo{
+	LDS_RTC_OPEN_ERROR,
+	LDS_RTC_INIT_ERROR,
+	LDS_RTC_START_ERROR,
+}LDS_RTC_ErrorNo;
+
 /* Define  --------------------------------------------------------------*/
 typedef enum tagRTC_CTRL
 {
@@ -17,15 +22,20 @@ typedef enum tagRTC_CTRL
 	LDS_CTRL_RTC_MAX
 }LDS_CTRL_RTC;
 
+
+typedef struct _LDS_RTC_CTX
+{
+	char 			dev_name[64];
+	LDS_RTC_ErrorNo	curr_err_state;
+}LDS_RTC_CTX;
+
 struct LDS_RTC_OPERATION
 {
-    struct LDS_HAL_COMMON comm;
+    struct LDS_HAL_COMMON base;
 	const char		*name;
-	int				ctxsize;
-	int				maxctrl;
 
 	/* common function */
-	int				(*ioctl)		(LDS_CTRL_RTC type, ...);
+	int				(*ioctl)		(LDS_RTC_CTX *ctx, LDS_CTRL_RTC type, ...);
 
 	/* component dependent fuction */
 };

@@ -8,15 +8,21 @@ extern "C"{
 #endif
 /* Header file include --------------------------------------------------*/
 
+typedef enum   _LDS_GPS_ErrorNo{
+	LDS_GPS_OPEN_ERROR,
+	LDS_GPS_INIT_ERROR,
+	LDS_GPS_START_ERROR,
+}LDS_GPS_ErrorNo;
+
 /* Define  --------------------------------------------------------------*/
-typedef enum tagLDS_GPS_STATUS
+typedef enum 	_LDS_GPS_STATUS
 {
 	GPS_DISCONNECT	=	0,
 	GPS_CONNECT_NODATA,
 	GPS_CONNECT_OKDATA,
 }LDS_GPS_STATUS;
 
-typedef struct	tagGPS_GPRMC
+typedef struct 	_LDS_GPS_GPRMC
 {
 	unsigned char	date_dd;
 	unsigned char	date_mm;
@@ -40,6 +46,12 @@ typedef struct	tagGPS_GPRMC
 
 } NC_GPS_GPRMC, *PNC_GPS_GPRMC;
 
+typedef struct	tagGPS_MESG
+{
+    unsigned char	data[50][20];
+    unsigned char	data_num;
+} NC_GPS_MESG, *PNC_GPS_MESG;
+
 typedef enum tagGPS_CTRL
 {
 	LDS_CTRL_GPS_END,
@@ -51,14 +63,24 @@ typedef enum tagGPS_CTRL
 	LDS_CTRL_GPS_MAX
 }LDS_CTRL_GPS;
 
+typedef struct _LDS_GPS_CTX
+{
+	int					(*callback)(void *, int, int);
+	char				dev_name[64];
+	pthread_t			pthread;
+	int					monitoring_start;
+	int					intaval;
+	NC_GPS_MESG 		gps_mesg;
+	NC_GPS_GPRMC		gps_rmc;
+	LDS_GPS_ErrorNo		curr_err_state;
+}LDS_GPS_CTX;
+
 struct LDS_GPS_OPERATION
 {
-    struct LDS_HAL_COMMON comm;
+    struct LDS_HAL_COMMON base;
 	const char		*name;
-	int				ctxsize;
-	int				maxctrl;
 
-	int				(*ioctl)		(LDS_CTRL_GPS type, ...);
+	int				(*ioctl)		(LDS_GPS_CTX *ctx_t, LDS_CTRL_GPS type, ...);
 };
 
 /* Define variable  -----------------------------------------------------*/

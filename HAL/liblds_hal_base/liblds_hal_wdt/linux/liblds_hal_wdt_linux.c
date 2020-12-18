@@ -19,16 +19,8 @@
 
 
 /* Define  -------------------------------------------------------------------*/
-struct LDS_WATCHDOG_CTX
-{
-	void			*ctx;
-    char            dev_name[64];
-	int			    fd;
-	int			    open_status;
-};
-
 /* Define variable  ----------------------------------------------------------*/
-struct LDS_WATCHDOG_CTX *ctx;
+static LDS_WATCHDOG_CTX *ctx = NULL;
 /* Define extern variable & function  ----------------------------------------*/
 
 /* Function prototype  -------------------------------------------------------*/
@@ -155,10 +147,8 @@ static int _wdt_alive( int fd )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int watchdog_dev_open( void *ctx_t)
+static int 			watchdog_dev_open( void *ctx_t)
 {
-	struct LDS_WATCHDOG_CTX *ctx;
-
 	if( ctx_t == NULL )
 		return -1;
 	else
@@ -185,16 +175,14 @@ static int watchdog_dev_open( void *ctx_t)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-int lds_wdt_open( char *dev_name )
+static int 			lds_hal_wdt_open( void *ctx_t, void *param )
 {   
-    if(NULL == dev_name){
+    if(NULL == ctx_t){
         return -1;
-    }
+    }else ctx = ctx_t;
     
-    memset(ctx, 0, sizeof(struct LDS_WATCHDOG_CTX));
-    
-    strcpy(ctx->dev_name, dev_name);
-	watchdog_dev_open(ctx);
+	watchdog_dev_open(ctx_t);
+
 	return 0;
 }
 
@@ -205,8 +193,11 @@ int lds_wdt_open( char *dev_name )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-int lds_wdt_close( int dev_fd )
+static int 			lds_hal_wdt_close( void *ctx_t )
 {
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
+
 	if(ctx->open_status)
 		close(ctx->fd);
 
@@ -220,7 +211,38 @@ int lds_wdt_close( int dev_fd )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-int lds_wdt_start( void )
+static int 			lds_hal_wdt_start( void *ctx_t )
+{
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
+
+	return 0;
+}
+
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int 			lds_hal_wdt_stop( void *ctx_t)
+{
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
+
+	return 0;
+}
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int 			lds_hal_wdt_init( void *param)
 {
 	return 0;
 }
@@ -233,21 +255,11 @@ int lds_wdt_start( void )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-int lds_wdt_stop( void )
+static int 			lds_hal_wdt_deinit( void *ctx_t)
 {
-	return 0;
-}
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
 
-/*******************************************************************************
-*	Description		:
-*	Argurments		:
-*	Return value	:
-*	Modify			:
-*	warning			:
-*******************************************************************************/
-int lds_wdt_init( void )
-{
-    ctx = (struct LDS_WATCHDOG_CTX *)malloc(sizeof(struct LDS_WATCHDOG_CTX));
 	return 0;
 }
 
@@ -259,12 +271,8 @@ int lds_wdt_init( void )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-int lds_wdt_deinit( void )
+static unsigned int lds_hal_wdt_read( unsigned char *data, unsigned int size)
 {
-    if(ctx){
-        free(ctx);
-        ctx = NULL;
-    }
 	return 0;
 }
 
@@ -276,10 +284,12 @@ int lds_wdt_deinit( void )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-unsigned int lds_wdt_read( unsigned char *data, unsigned int size)
+static unsigned int lds_hal_wdt_write( unsigned char *data, unsigned int size)
 {
 	return 0;
 }
+
+
 /*******************************************************************************
 *	Description		:
 *	Argurments		:
@@ -287,10 +297,14 @@ unsigned int lds_wdt_read( unsigned char *data, unsigned int size)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-unsigned int lds_wdt_write( unsigned char *data, unsigned int size)
+static int lds_hal_wdt_get_error( void *ctx_t)
 {
-	return 0;
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
+
+	return ctx->curr_err_state;
 }
+
 /*******************************************************************************
 *	Description		:
 *	Argurments		:
@@ -298,11 +312,12 @@ unsigned int lds_wdt_write( unsigned char *data, unsigned int size)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-int lds_wdt_control(LDS_CTRL_WATCHDOG type, ...)
+static int 			lds_hal_wdt_control(LDS_WATCHDOG_CTX *ctx, LDS_CTRL_WATCHDOG type, ...)
 {
 	/* check maxctrl */
 	if (type >= LDS_CTRL_WATCHDOG_MAX)
 		return -1;
+	if(NULL == ctx) return -1;
 
 	/* Parse multi param */
 	va_list ctrl;
@@ -360,16 +375,12 @@ int lds_wdt_control(LDS_CTRL_WATCHDOG type, ...)
 }
 
 struct LDS_WATCHDOG_OPERATION lds_hal_wdt = {
-		.name			    = "lds_hal_watchdog",
-		.ctxsize		    = sizeof(struct LDS_WATCHDOG_CTX),
-		.maxctrl		    = LDS_CTRL_WATCHDOG_MAX,
-
-		.comm.lds_hal_open	= lds_wdt_open,
-		.comm.lds_hal_close	= lds_wdt_close,
-		.comm.lds_hal_start = lds_wdt_start,
-		.comm.lds_hal_stop  = lds_wdt_stop,
-		.comm.lds_hal_init  = lds_wdt_init,
-		.comm.lds_hal_deinit= lds_wdt_deinit,
-		.ioctl	            = lds_wdt_control,
+	.name			    	= "lds_hal_watchdog",
+	.base.lds_hal_open		= lds_hal_wdt_open,
+	.base.lds_hal_close		= lds_hal_wdt_close,
+	.base.lds_hal_start 	= lds_hal_wdt_start,
+	.base.lds_hal_stop  	= lds_hal_wdt_stop,
+	.base.lds_hal_get_error = lds_hal_wdt_get_error,
+	.ioctl	            	= lds_hal_wdt_control,
 };
 

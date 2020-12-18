@@ -6,7 +6,11 @@
 extern "C"{
 #endif
 
-/* Header file include --------------------------------------------------*/
+typedef enum   _LDS_WDT_ErrorNo{
+	LDS_WDT_OPEN_ERROR,
+	LDS_WDT_INIT_ERROR,
+	LDS_WDT_START_ERROR,
+}LDS_WDT_ErrorNo;
 
 /* Define  --------------------------------------------------------------*/
 typedef enum tagWATCHDOG_CTRL
@@ -20,15 +24,21 @@ typedef enum tagWATCHDOG_CTRL
 	LDS_CTRL_WATCHDOG_MAX
 }LDS_CTRL_WATCHDOG;
 
+typedef struct _LDS_WATCHDOG_CTX
+{
+    char            dev_name[64];
+	int			    fd;
+	int			    open_status;
+	LDS_WDT_ErrorNo	curr_err_state;
+}LDS_WATCHDOG_CTX;
+
 struct LDS_WATCHDOG_OPERATION
 {
-    struct LDS_HAL_COMMON comm;
+    struct LDS_HAL_COMMON base;
 	const char		*name;
-	int				ctxsize;
-	int				maxctrl;
 
 	/* common function */
-	int				(*ioctl)		(LDS_CTRL_WATCHDOG type, ...);
+	int				(*ioctl)		(LDS_WATCHDOG_CTX *ctx, LDS_CTRL_WATCHDOG type, ...);
 };
 
 /* Define variable  -----------------------------------------------------*/

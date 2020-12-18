@@ -6,6 +6,12 @@
 extern "C"{
 #endif
 
+typedef enum   _LDS_I2C_ErrorNo{
+	LDS_I2C_OPEN_ERROR,
+	LDS_I2C_INIT_ERROR,
+	LDS_I2C_START_ERROR,
+}LDS_I2C_ErrorNo;
+
 typedef enum tagCTRL_I2C
 {
 	LDS_CTRL_I2C_END,
@@ -21,17 +27,25 @@ typedef enum tagCTRL_I2C
 	LDS_CTRL_I2C_MAX
 }LDS_CTRL_I2C;
 
+typedef struct _LDS_I2C_CTX
+{
+	int					slave_addr;
+	int					addr_register;
+	int					reg_length;
+	int					data_length;
+	char				reg_address[4];
+	char				i2c_name[12];
+	LDS_I2C_ErrorNo		curr_err_state;
+}LDS_I2C_CTX;
+
 struct LDS_I2C_OPERATION
 {
-    struct LDS_HAL_COMMON comm;
+    struct LDS_HAL_COMMON base;
 	const char		*name;
-	int				ctxsize;
-	int				maxctrl;
-
 	/* common function */
-	int				(*read)			(int fd, void *data, unsigned int size );
-	int				(*write)		(int fd, void *data, unsigned int size );
-	int				(*ioctl)		(LDS_CTRL_I2C type, ...);
+	int				(*read)			(LDS_I2C_CTX *ctx_t, int fd, void *data, unsigned int size );
+	int				(*write)		(LDS_I2C_CTX *ctx_t, int fd, void *data, unsigned int size );
+	int				(*ioctl)		(LDS_I2C_CTX *ctx_t, LDS_CTRL_I2C type, ...);
 };
 
 

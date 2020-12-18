@@ -11,24 +11,61 @@ extern "C"{
 
 #if LINUX
 #include <alsa/asoundlib.h>
-#include <stdint.h>
 #endif
 
-typedef struct _LDS_AE_STR
+typedef enum   _LDS_AE_ErrorNo{
+	LDS_AUDIO_ENCODE_OPEN_ERROR = 100,
+	LDS_AUDIO_ENCODE_CLOSE_ERROR,
+	LDS_AUDIO_ENCODE_INIT_ERROR,
+	LDS_AUDIO_ENCODE_START_ERROR,
+	LDS_AUDIO_ENCODE_SET_HW_ERROR,
+	LDS_AUDIO_ENCODE_SET_SW_ERROR,
+	LDS_AUDIO_ENCODE_STOP_ERROR,
+	LDS_AUDIO_ENCODE_READ_ERROR,
+	LDS_AUDIO_ENCODE_GET_VOLUME_ERROR,
+	LDS_AUDIO_ENCODE_SET_VOLUME_ERROR,
+	LDS_AUDIO_ENCODE_MUTE_ERROR
+}LDS_AUDIO_ENCODE_ErrorNo;
+
+typedef struct _LDS_AE_PARAM
+{	
+	char	device[128];
+	
+	unsigned int pcm_format;
+	unsigned int sampling_rate;
+	unsigned int byte_per_sample;
+	unsigned int channel_num;
+	unsigned int sampling_frames;
+	unsigned int read_interval;
+	
+	unsigned int buffer_time;
+	unsigned int period_time;
+
+	unsigned int sw_param_enable ;
+	snd_pcm_access_t acccess; 
+	
+}LDS_AE_PARAM, *pLDS_AE_PARAM;
+
+typedef struct _LDS_AE_CTX
 {
-	const char*			device;
-	const char*			vol_selem;
-	const char*			vol_mute_selem;
+	char				device[128];         //audio device name
+	int				dev_fd; 			 //audio device fd
+	char				vol_selem[128];      //volume reserved
+	char				vol_mute_selem[128]; //mute volume reserved
+
+	unsigned int        bEnable;
 	
 	unsigned int 		pcm_format;
 	unsigned int 		sampling_rate;
-	unsigned int		bit_per_sample;
+	unsigned int		byte_per_sample;
+	unsigned int		channel_num;
+	unsigned int 		sampling_frames;
+	unsigned int 		read_interval;
+	
 	unsigned int		buffer_time;
 	unsigned int		period_time;
 
-	unsigned int		channel_num;
 	unsigned int		sw_param_enable;
-
 	#if LINUX
 	snd_pcm_access_t 	acccess;	
 	snd_pcm_t 			*phandle;
@@ -41,16 +78,19 @@ typedef struct _LDS_AE_STR
 	void 				*sw_params;
 	#endif
 
-}LDS_AE_STR;
+	LDS_AUDIO_ENCODE_ErrorNo curr_err_state;
+}LDS_AE_CTX, *pLDS_AE_CTX;
 
 struct LDS_AUDIO_MIC_OPERATION
 {
-    struct  LDS_HAL_COMMON comm;
+    struct  LDS_HAL_COMMON base;
     const   char *name;
-    int	    (*lds_audio_mic_read)( char* pbuf,  int size );
-    int	    (*lds_audio_mic_get_volume)( void );
-    void	(*lds_audio_mic_set_volume)(int volume );
-    void 	(*lds_audio_mic_mute)( int mute );
+    int 	(*lds_audio_mic_per_frame_bytes)(snd_pcm_format_t format);
+    int	(*lds_audio_mic_read)( pLDS_AE_CTX ctx, char* pbuf,  int size );
+    int	(*lds_audio_mic_get_volume)( pLDS_AE_CTX ctx, int* volume );
+    int	(*lds_audio_mic_set_volume)(pLDS_AE_CTX ctx, int volume );
+    int 	(*lds_audio_mic_mute)(pLDS_AE_CTX ctx,  int mute );
+    //void 	(*lds_audio_mic_mute_ex)(pLDS_AE_CTX ctx, int mute);
 };
 
 /********************************************************************************

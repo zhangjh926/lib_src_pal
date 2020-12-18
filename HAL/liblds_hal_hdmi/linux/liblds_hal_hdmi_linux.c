@@ -7,7 +7,7 @@
 
 /* Define  -------------------------------------------------------------------*/
 /* Define variable  ----------------------------------------------------------*/
-
+static LDS_HDMI_CTX *ctx = NULL;
 /* Define extern variable & function  ----------------------------------------*/
 
 
@@ -19,8 +19,11 @@
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_hdmi_open(char *dev_name)
+static int lds_hal_hdmi_open(void *ctx_t, void *param)
 {
+    if(NULL == ctx_t) return -1;
+    else ctx = ctx_t;
+
     return 0;
 }
 
@@ -32,7 +35,22 @@ static int lds_hal_hdmi_open(char *dev_name)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_hdmi_close(int dev_fd)
+static int lds_hal_hdmi_close(void *ctx_t)
+{
+    if(NULL == ctx_t) return -1;
+    else ctx = ctx_t;
+
+    return 0;
+}
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int lds_hal_hdmi_init(void *param)
 {
     return 0;
 }
@@ -44,8 +62,11 @@ static int lds_hal_hdmi_close(int dev_fd)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_hdmi_init(void)
+static int lds_hal_hdmi_deinit(void *ctx_t)
 {
+    if(NULL == ctx_t) return -1;
+    else ctx = ctx_t;
+
     return 0;
 }
 
@@ -56,8 +77,11 @@ static int lds_hal_hdmi_init(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_hdmi_deinit(void)
+static int lds_hal_hdmi_start(void *ctx_t)
 {
+    if(NULL == ctx_t) return -1;
+    else ctx = ctx_t;
+
     return 0;
 }
 
@@ -68,8 +92,11 @@ static int lds_hal_hdmi_deinit(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_hdmi_start(void)
+static int lds_hal_hdmi_stop(void *ctx_t)
 {
+    if(NULL == ctx_t) return -1;
+    else ctx = ctx_t;
+
     return 0;
 }
 
@@ -80,10 +107,14 @@ static int lds_hal_hdmi_start(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_hdmi_stop(void)
+static int lds_hal_hdmi_get_error(void *ctx_t)
 {
-    return 0;
+    if(NULL == ctx_t) return -1;
+    else ctx = ctx_t;
+    
+    return ctx->curr_err_state;
 }
+
 
 /*******************************************************************************
 *	Description		:
@@ -92,10 +123,11 @@ static int lds_hal_hdmi_stop(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_hdmi_ioctl(LDS_CTRL_HDMI type, ...)
+static int lds_hal_hdmi_ioctl(LDS_HDMI_CTX *ctx, LDS_CTRL_HDMI type, ...)
 {
-	switch(type)
-	{
+    if( NULL == ctx) return -1;
+
+	switch(type){
 		default:
 			break;
 	}
@@ -105,12 +137,11 @@ static int lds_hal_hdmi_ioctl(LDS_CTRL_HDMI type, ...)
 
 
 struct LDS_HDMI_OPERATION lds_hal_hdmi = {
-    .name               = "lds_hal_hdmi",
-    .comm.lds_hal_open  = lds_hal_hdmi_open,
-    .comm.lds_hal_close = lds_hal_hdmi_close,
-    .comm.lds_hal_start = lds_hal_hdmi_start,
-    .comm.lds_hal_stop  = lds_hal_hdmi_stop,
-    .comm.lds_hal_init  = lds_hal_hdmi_init,
-    .comm.lds_hal_deinit= lds_hal_hdmi_deinit,
-    .ioctl              = lds_hal_hdmi_ioctl,
+    .name                   = "lds_hal_hdmi",
+    .base.lds_hal_open      = lds_hal_hdmi_open,
+    .base.lds_hal_close     = lds_hal_hdmi_close,
+    .base.lds_hal_start     = lds_hal_hdmi_start,
+    .base.lds_hal_stop      = lds_hal_hdmi_stop,
+    .base.lds_hal_get_error = lds_hal_hdmi_get_error,
+    .ioctl                  = lds_hal_hdmi_ioctl,
 };

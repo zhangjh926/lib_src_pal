@@ -2,17 +2,21 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <stdint.h>
+#include <pthread.h>
 #include <alsa/asoundlib.h>
 
 #include "liblds_hal_audio_mic_base.h"
 
+#define MAX_NUM_DEVICES	256
 
 static snd_pcm_uframes_t buffer_size;
 static snd_pcm_uframes_t period_size;
-static LDS_AE_STR *ptAudio = NULL;
+static LDS_AE_CTX *ptAudio = NULL;
+static LDS_AE_CTX *ptAudioArray[MAX_NUM_DEVICES] = {0};	
+static pthread_mutex_t MicArrayLock = PTHREAD_MUTEX_INITIALIZER;
 /* define and enums - andy */
 static int bEnable = 0 ;
-
+// static LDS_AUDIO_ENCODE_ErrorNo curr_err_state;
 /******************************************************************************
 * @desc
 * set alas sw param
@@ -21,10 +25,12 @@ static int bEnable = 0 ;
 * __set_sw_params()
 *
 *******************************************************************************/
-static int  __set_sw_params(void)
+static int  __set_sw_params(pLDS_AE_CTX ptAudio)
 {
 	int	err;
-
+	snd_pcm_uframes_t buffer_size = 0;
+	snd_pcm_uframes_t period_size = 0;
+	
 	if (!buffer_size)   buffer_size = 8192;
 	if (!period_size)   period_size = buffer_size>>2;
 	
@@ -71,18 +77,74 @@ static int  __set_sw_params(void)
 
 /******************************************************************************
 * @desc
+* set alas sw param
+*
+* @func
+* __set_sw_params_ex()
+*
+*******************************************************************************/
+static int  __set_sw_params_ex(LDS_AE_CTX * param)
+{
+	int	err;
+
+	if (!buffer_size)   buffer_size = 8192;
+	if (!period_size)   period_size = buffer_size>>2;
+	
+	// allocate an invalid snd_pcm_sw_params_t using standard alloca.
+	snd_pcm_sw_params_alloca(&(param->sw_params));
+	
+	// Fill params with a full configuration space for a PCM.
+	if ((err = snd_pcm_sw_params_current(param->phandle, param->sw_params) < 0)) 
+	{
+		fprintf(stderr, "Unable to determine current swparams\n");
+		return err;
+	}
+
+	// Set avail min inside a software configuration container.
+	if ((err = snd_pcm_sw_params_set_avail_min(param->phandle, param->sw_params, period_size) < 0)) 
+	{
+		fprintf(stderr, "Unable to set start threshold mode\n");
+		return err;
+	}
+	
+	// Set start threshold inside a software configuration container.
+	if ((err = snd_pcm_sw_params_set_start_threshold(param->phandle, param->sw_params, buffer_size) < 0)) 
+	{
+		fprintf(stderr, "Unable to set start threshold mode\n");
+		return err;
+	}
+
+	// Set start threshold inside a software configuration container.
+	if ((err = snd_pcm_sw_params_set_stop_threshold(param->phandle, param->sw_params, buffer_size) < 0)) 
+	{
+		fprintf(stderr, "Unable to set start threshold mode\n");
+		return err;
+	}
+
+	// Install one PCM hardware configuration chosen from a configuration space and snd_pcm_prepare it.
+	if ((err = snd_pcm_sw_params(param->phandle, param->sw_params)) < 0) 
+	{
+		fprintf(stderr, "Unable to set sw params\n");
+		return err;
+	}	
+	
+	return err;
+}
+
+/******************************************************************************
+* @desc
 * set alas hw param
 *
 * @func
 * __set_hw_params()
 *
 *******************************************************************************/
-static int __set_hw_params( void )
+static int __set_hw_params( pLDS_AE_CTX ptAudio )
 {
 	int err;
 
-	buffer_size = 0;
-	period_size = 0;
+	snd_pcm_uframes_t buffer_size = 0;
+	snd_pcm_uframes_t period_size = 0;
 	
 	// allocate an invalid snd_pcm_hw_params_t using standard malloc.
 	snd_pcm_hw_params_alloca(&(ptAudio->hw_params));
@@ -173,6 +235,108 @@ static int __set_hw_params( void )
 
 /******************************************************************************
 * @desc
+* set alas hw param
+*
+* @func
+* __set_hw_params_ex()
+*
+*******************************************************************************/
+static int __set_hw_params_ex(LDS_AE_CTX * param)
+{
+	int err;
+
+	buffer_size = 0;
+	period_size = 0;
+	
+	// allocate an invalid snd_pcm_hw_params_t using standard malloc.
+	snd_pcm_hw_params_alloca(&(param->hw_params));
+
+	// Fill params with a full configuration space for a PCM.
+	if ((err = snd_pcm_hw_params_any(param->phandle, param->hw_params) < 0)) 
+	{
+		fprintf(stderr, "cannot initialize hardware parameter structure\n");
+		return err;
+	}
+
+	// Restrict a configuration space to contain only real hardware rates.(0 = disable, 1 = enable)
+	if ((err = snd_pcm_hw_params_set_rate_resample(param->phandle, param->hw_params, 1) < 0)) 
+	{
+		fprintf(stderr, "Resampling setup failed\n");
+		return err;
+	}
+
+	// Restrict a configuration space to contain only one access type.
+	if ((err = snd_pcm_hw_params_set_access(param->phandle, param->hw_params, param->acccess)) < 0) 
+	{
+		fprintf(stderr, "cannot set access type\n");
+		return err;
+	}
+
+	// Restrict a configuration space to contain only one format.
+	if ((err = snd_pcm_hw_params_set_format(param->phandle, param->hw_params, param->pcm_format) < 0)) 
+	{
+		fprintf(stderr, "cannot set sample format\n");
+		return err;
+	}
+
+	// Restrict a configuration space to contain only one channels count.
+	if ((err = snd_pcm_hw_params_set_channels(param->phandle, param->hw_params, param->channel_num)) < 0) 
+	{
+		fprintf(stderr, "cannot set channel count\n");
+		return err;
+	}
+
+	// Restrict a configuration space to have rate nearest to a target.
+	if ((err = snd_pcm_hw_params_set_rate_near(param->phandle, param->hw_params, &(param->sampling_rate), 0)) < 0) 
+	{
+		fprintf(stderr, "cannot set sample rate\n");
+		return err;
+	}
+
+	if( param->buffer_time )
+	{
+		// Restrict a configuration space to have buffer time nearest to a target.
+		if ((err = snd_pcm_hw_params_set_buffer_time_near(param->phandle, param->hw_params, &(param->buffer_time), 0)) < 0) 
+		{
+			fprintf(stderr, "cannot set buffer time\n");
+			return err;
+		}
+
+		if ((err = snd_pcm_hw_params_get_buffer_size(param->hw_params, &buffer_size)) < 0) 
+		{
+			fprintf(stderr, "cannot to get buffer size\n");
+			return err;
+		}
+	}
+
+	if( param->period_time )
+	{	
+		// Restrict a configuration space to have period time nearest to a target.
+		if ((err = snd_pcm_hw_params_set_period_time_near(param->phandle, param->hw_params, &(param->period_time), 0)) < 0) 
+		{
+			fprintf(stderr, "cannot set period times\n");
+			return err;
+		} 
+
+		if ((err = snd_pcm_hw_params_get_period_size(param->hw_params, &period_size, 0)) < 0) 
+		{
+			fprintf(stderr, "cannot to get period size\n");
+			return err;
+		}
+	}
+
+	// Install one PCM hardware configuration chosen from a configuration space and snd_pcm_prepare it.
+	if ((err = snd_pcm_hw_params(param->phandle, param->hw_params)) < 0) 
+	{
+		fprintf(stderr, "cannot set parameters\n");
+		return err;
+	}	
+
+	return err;
+}
+
+/******************************************************************************
+* @desc
 * alsa capture init
 *
 * @parm_in
@@ -185,16 +349,70 @@ static int __set_hw_params( void )
 * lds_ae_init()
 *
 *******************************************************************************/
-static int lds_ae_init( void )
+static int lds_audio_encode_init( void *param)
 {
-     int err = 0;
+	int err = 0;
+	int index = 0;
 
-	/* Andy	 */
-     if( bEnable == 1 )
-     {
-    	fprintf( stdout, "[%s:%d] NCL_AE_Init have already initialize!\n", __FILE__, __LINE__ );
-    	return err;
-     }
+	if(!param)
+	{
+		return -1;
+	}
+	 
+	LDS_AE_PARAM* pAeParams = (LDS_AE_PARAM*)param;
+	for(index = 0; index < MAX_NUM_DEVICES; index++)
+	{
+		if(ptAudioArray[index])
+		{
+			if((!strcmp(ptAudioArray[index]->device, pAeParams->device)) && (!ptAudioArray[index]->bEnable))
+			{
+				ptAudioArray[index]->byte_per_sample = pAeParams->byte_per_sample;
+				ptAudioArray[index]->pcm_format = pAeParams->pcm_format;
+				ptAudioArray[index]->buffer_time = pAeParams->buffer_time;
+				ptAudioArray[index]->period_time = pAeParams->period_time;
+				ptAudioArray[index]->channel_num = pAeParams->channel_num;
+				ptAudioArray[index]->sampling_rate =pAeParams->sampling_rate;
+
+				// opens a PCM (Capture)	
+				if ((err = snd_pcm_open(&(ptAudioArray[index]->phandle), ptAudioArray[index]->device, SND_PCM_STREAM_CAPTURE, 0)) < 0) 
+				{
+					fprintf(stderr, ">>>>> [%s:%d]: cannot open audio device(%s)\n", __FILE__, __LINE__, snd_strerror(err));
+					return err;
+				}
+
+				// set hw parameter
+				if ((err = __set_hw_params_ex(ptAudioArray[index])) < 0) 
+				{
+					fprintf(stderr, ">>>>> [%s:%d]: Setting of hw params failed(%s)\n", __FILE__, __LINE__, snd_strerror(err));
+					return err;
+				}	
+
+				// set sw parameter
+				if( ptAudioArray[index]->sw_param_enable )
+				{
+					if ((err = __set_sw_params_ex(ptAudioArray[index])) < 0) 
+					{
+						fprintf(stderr, ">>>>> [%s:%d]: Setting of sw params failed(%s)\n", __FILE__, __LINE__, snd_strerror(err));
+						return err;
+					}
+				}
+
+				ptAudioArray[index]->bEnable = 1;
+			}
+		}
+		else
+		{
+			continue;
+		}
+	}
+	
+	#if 0
+	 /* Andy	 */
+	if( bEnable == 1 )
+	{
+		fprintf( stdout, "[%s:%d] NCL_AE_Init have already initialize!\n", __FILE__, __LINE__ );
+		return err;
+	}
 
 	// opens a PCM (Capture)	
 	if ((err = snd_pcm_open(&(ptAudio->phandle), ptAudio->device, SND_PCM_STREAM_CAPTURE, 0)) < 0) 
@@ -221,11 +439,12 @@ static int lds_ae_init( void )
 	}
 
 	snd_pcm_drop(ptAudio->phandle);
-	
+
 	/* Andy */
 	bEnable = 1;
 
 	return err;
+	#endif
 }
 
 /******************************************************************************
@@ -242,14 +461,18 @@ static int lds_ae_init( void )
 * lds_ae_deinit()
 *
 *******************************************************************************/
-static int lds_ae_deinit( void)
+#if 0
+static int lds_audio_encode_deinit( void)
 {
 	if( bEnable == 0 )
-      {
+    {
     		fprintf( stdout, "[%s:%d] you have to call NCL_AE_Init first time!\n", __FILE__, __LINE__ );
     		return -1;
-      }
+     }
+     pLDS_AE_CTX ptAudio;
 
+     if(NULL == ctx_t) return -1;
+     else ptAudio = (pLDS_AE_CTX)ctx_t;
 #if 0 // not used
 	/*
 	* There are two ways of allocating such structures:
@@ -271,6 +494,78 @@ static int lds_ae_deinit( void)
 
     return 0;
 }
+#endif
+/******************************************************************************
+* @desc
+* alsa capture deinit
+*
+* @parm_in
+* int : dev_fd
+*
+* @return   
+* void
+*
+* @func
+* lds_ae_deinit()
+*
+*******************************************************************************/
+static int lds_audio_encode_deinit( void *ctx_t )
+{
+	int retVal = -1;
+
+	if(NULL == ctx_t){
+		return -1;
+	}else {
+		ptAudio = ctx_t;
+	}
+
+	if(ptAudioArray[ptAudio->dev_fd]->bEnable == 0)
+	{
+		fprintf( stdout, "[%s:%d] you have to call NCL_AE_Init first time!\n", __FILE__, __LINE__ );
+		return -1;
+	}
+
+	
+	if(ptAudioArray[ptAudio->dev_fd]->phandle != NULL)
+	{
+		retVal = snd_pcm_close(ptAudioArray[ptAudio->dev_fd]->phandle);
+		if(0 == retVal)
+		{
+			ptAudioArray[ptAudio->dev_fd]->bEnable = 0;
+			return 0;
+		}
+		else
+		{
+			fprintf( stdout, "[%s:%d] close mic device failed !\n", __FILE__, __LINE__ );
+			return -1;
+		}	
+	}
+}
+
+/******************************************************************************
+* @desc
+* length of each audio frame
+*
+* @parm_in
+* pLDS_AE_CTX : pointer struct _LDS_AE_STR
+* 
+* @return   
+* length of each audio frame
+*
+* @func
+* ds_audio_encode_per_frame_bytes()
+*
+*******************************************************************************/
+static int lds_audio_encode_per_frame_bytes(snd_pcm_format_t format)
+{
+	int retVal = -1;
+	
+	if(format > SND_PCM_FORMAT_UNKNOWN)
+	{
+		retVal = snd_pcm_format_width(format)/8;
+	}
+	return retVal;
+}
 
 /******************************************************************************
 * @desc
@@ -288,11 +583,11 @@ static int lds_ae_deinit( void)
 * lds_ae_read()
 *
 *******************************************************************************/
-static int lds_ae_read( char* pbuf,  int size )
+static int lds_audio_encode_read(pLDS_AE_CTX ptAudio, char* pbuf,  int size )
 {
 	int err; 
 	
-	if( bEnable == 0 )
+	if( ptAudio->bEnable == 0 )
       {
     		fprintf( stdout, "[%s:%d] you have to call NCL_AE_Init first time!\n", __FILE__, __LINE__ );
     		return -1;
@@ -315,14 +610,14 @@ static int lds_ae_read( char* pbuf,  int size )
 	 *
 	 *  Now
 	 *  1. Chunk size(bytes) : 4096bytes,  byte per one sample(16bits : 2bytes)
-	 *  2. Samples per chunk : Chunk size / channel / byte per one sample(bit_per_sample)
+	 *  2. Samples per chunk : Chunk size / channel / byte per one sample(byte_per_sample)
 	 *    -> 4096 / 1 / 2 => 2048
 	 *  3. time of sample per chunk = samples(sample per chunk) / sampling rate
 	 *    -> 16000 / 2048 => 0.128second( 128ms or 128000us)
 	 *
 	 ************************************************************************************/
 	//fprintf( stdout, "chunksize:%d", size);
-	size = (size / ptAudio->channel_num / ptAudio->bit_per_sample); 
+	size = (size / ptAudio->channel_num / ptAudio->byte_per_sample); 
 	//fprintf( stdout, "sampes per chunk:%ld, ch:%d, bit_per_sample:%d\n", size, ptAudio->channel_num, ptAudio->bit_per_sample );
 	while(size > 0)
 	{
@@ -344,7 +639,7 @@ static int lds_ae_read( char* pbuf,  int size )
 			snd_pcm_recover( ptAudio->phandle, err, 1 );
 		}else if( (uint32_t)err <= size ){ 
 			size -= err;
-			pbuf += (err * ptAudio->channel_num * ptAudio->bit_per_sample); 
+			pbuf += (err * ptAudio->channel_num * ptAudio->byte_per_sample); 
 		}
 	}
 	
@@ -365,20 +660,29 @@ static int lds_ae_read( char* pbuf,  int size )
 * lds_ae_Start()
 *
 *******************************************************************************/
-static int lds_ae_start( void )
+static int lds_audio_encode_start(void *ctx_t)
 {
-	if( bEnable == 0 )
-    {
-    	fprintf( stdout, "[%s:%d] you have to call NCL_AE_Init first time!\n", __FILE__, __LINE__ );
-    	return -1;
-    }
-
-	if(ptAudio->phandle == NULL)
+	if(NULL == ctx_t)
+	{
 		return -1;
+	}
+	else
+	{
+		pLDS_AE_CTX mic_ctx = (pLDS_AE_CTX)ctx_t;
+		if(mic_ctx->bEnable == 0)
+		{
+			fprintf( stdout, "[%s:%d] you have to call NCL_AE_Init first time!\n", __FILE__, __LINE__ );
+			return -1;
+		}
+		if(mic_ctx->phandle == NULL)
+		{
+			return -1;
+		}
 
-	snd_pcm_prepare(ptAudio->phandle);
-
-    return 0;
+		snd_pcm_prepare(mic_ctx->phandle);
+	}
+	
+    	return 0;
 }
 
 /******************************************************************************
@@ -395,19 +699,29 @@ static int lds_ae_start( void )
 * lds_ae_stop()
 *
 *******************************************************************************/
-static int lds_ae_stop( void )
+static int lds_audio_encode_stop( void *ctx_t)
 {
-	if( bEnable == 0 )
-    {
-    	fprintf( stdout, "[%s:%d] you have to call NCL_AE_Init first time!\n", __FILE__, __LINE__ );
-    	return -1;
-    }
-
-	if(ptAudio->phandle == NULL)
+	if(NULL == ctx_t)
+	{
 		return -1;
+	}
+	else 
+	{
+		pLDS_AE_CTX mic_ctx = (pLDS_AE_CTX)ctx_t;
+		if(mic_ctx->bEnable == 0)
+		{
+			fprintf( stdout, "[%s:%d] you have to call NCL_AE_Init first time!\n", __FILE__, __LINE__ );
+			return -1;
+		}
+		if(mic_ctx->phandle == NULL)
+		{
+			return -1;
+		}
 
-	snd_pcm_drop(ptAudio->phandle);
-    return 0;
+		snd_pcm_drop(mic_ctx->phandle);
+	}
+	
+    	return 0;
 }
 
 /******************************************************************************
@@ -422,10 +736,81 @@ static int lds_ae_stop( void )
 * lds_ae_open()
 *
 *******************************************************************************/
-static int lds_ae_open( char *dev_name )
+static int lds_audio_encode_open( void *ctx_t , void *param)
 {
-    ptAudio = (LDS_AE_STR*)malloc(sizeof(LDS_AE_STR));
-    return 0;
+	int err = 0;
+	
+	pLDS_AE_PARAM mic_param = (pLDS_AE_PARAM)param;
+	pLDS_AE_CTX mic_ctx = (pLDS_AE_CTX)ctx_t;
+		
+	if(NULL == ctx_t)
+	{
+		return -1;
+	}
+	
+	if(NULL == param)
+	{
+		return -1;
+	}
+	else
+	{
+		if(0 == mic_ctx->bEnable)
+		{
+			memcpy(mic_ctx->device, mic_param->device, 128);
+			
+			mic_ctx->pcm_format = mic_param->pcm_format;
+			mic_ctx->sampling_rate =  mic_param->sampling_rate;
+			mic_ctx->byte_per_sample = mic_param->byte_per_sample;
+			mic_ctx->channel_num  = mic_param->channel_num;
+			mic_ctx->sampling_frames  = mic_param->sampling_frames;
+			mic_ctx->read_interval  = mic_param->read_interval;
+			
+			mic_ctx->buffer_time = mic_param->buffer_time;
+			mic_ctx->period_time = mic_param->period_time;
+
+			mic_ctx->sw_param_enable = mic_param->sw_param_enable;
+			mic_ctx->acccess = mic_param->acccess;
+
+			// opens a PCM (Capture)	
+			if ((err = snd_pcm_open(&(mic_ctx->phandle), mic_ctx->device, SND_PCM_STREAM_CAPTURE, 0)) < 0) 
+			{
+				fprintf(stderr, ">>>>> [%s:%d]: cannot open audio device(%s)\n", __FILE__, __LINE__, snd_strerror(err));
+				mic_ctx->curr_err_state = LDS_AUDIO_ENCODE_OPEN_ERROR;
+				
+				return -1;
+			}
+
+			// set hw parameter
+			if ((err = __set_hw_params(mic_ctx)) < 0) 
+			{
+				fprintf(stderr, ">>>>> [%s:%d]: Setting of hw params failed(%s)\n", __FILE__, __LINE__, snd_strerror(err));
+				mic_ctx->curr_err_state = LDS_AUDIO_ENCODE_OPEN_ERROR;
+				snd_pcm_close(mic_ctx->phandle);
+				
+				return -1;
+			}	
+
+			// set sw parameter
+			if(mic_ctx->sw_param_enable )
+			{
+				if ((err = __set_sw_params(mic_ctx)) < 0) 
+				{
+					fprintf(stderr, ">>>>> [%s:%d]: Setting of sw params failed(%s)\n", __FILE__, __LINE__, snd_strerror(err));
+					mic_ctx->curr_err_state = LDS_AUDIO_ENCODE_OPEN_ERROR;
+					snd_pcm_close(mic_ctx->phandle);
+					
+					return -1;
+				}
+			}
+
+			mic_ctx->bEnable = 1;
+		}
+		else
+		{
+			fprintf( stdout, "[%s:%d] mic ctx bEnable != 0 !\n", __FILE__, __LINE__ );
+			return 0;
+		}
+	}	
 }
 
 
@@ -438,16 +823,41 @@ static int lds_ae_open( char *dev_name )
 * @return  int 
 *
 * @func
-* lds_ae_open()
+* lds_audio_encode_close()
 *
 *******************************************************************************/
-static int lds_ae_close( int dev_fd )
+static int lds_audio_encode_close( void *ctx_t )
 {
-    if(ptAudio){
-        free(ptAudio);
-        ptAudio = NULL;
-    }
-    return 0;
+	pLDS_AE_CTX mic_ctx = (pLDS_AE_CTX)ctx_t;
+	
+	if(NULL == ctx_t)
+	{
+		return -1;
+	}
+
+	if(0 == mic_ctx->bEnable)
+	{
+		fprintf( stdout, "[%s:%d] mic ctx bEnable == 0 !\n", __FILE__, __LINE__ );
+		
+		return -1;
+	}
+	else 
+	{
+		if(mic_ctx->phandle)
+		{
+			snd_pcm_close(mic_ctx->phandle);
+			mic_ctx->phandle = NULL;
+			mic_ctx->bEnable = 0;
+		}
+		else
+		{
+			mic_ctx->curr_err_state = LDS_AUDIO_ENCODE_CLOSE_ERROR;
+			fprintf( stdout, "[%s:%d] mic ctx phandle == 0 !\n", __FILE__, __LINE__ );
+			return -1;
+		}
+	}
+
+	return 0;
 }
 
 
@@ -465,23 +875,24 @@ static int lds_ae_close( int dev_fd )
 * lds_ae_set_volume()
 *
 *******************************************************************************/
-static void lds_ae_set_volume( int volume )
+static int lds_audio_encode_set_volume(pLDS_AE_CTX ptAudio, int volume )
 {
 	snd_mixer_t *handle;
 	snd_mixer_selem_id_t *sid;
-	const char* card = "default";
+	//const char* card = "default";
 
-	if( bEnable == 0 )
-      {
-    	fprintf( stdout, "[%s:%d] you have to call NCL_AE_Init first time!\n", __FILE__, __LINE__ );
-    	return;
-      }
+	if( ptAudio->bEnable == 0 )
+	{
+		fprintf( stdout, "[%s:%d] you have to call NCL_AE_Init first time!\n", __FILE__, __LINE__ );
+		ptAudio->curr_err_state = LDS_AUDIO_ENCODE_SET_VOLUME_ERROR;
+		return -1;
+	}
 
-	if(ptAudio->vol_selem == NULL)
-		return;
+	// if(ptAudio->vol_selem == NULL)
+	// 	return;
 	
 	snd_mixer_open(&handle, 0);
-	snd_mixer_attach(handle, card);
+	snd_mixer_attach(handle, ptAudio->device);
 	snd_mixer_selem_register(handle, NULL, NULL);
 	snd_mixer_load(handle);
 
@@ -494,13 +905,16 @@ static void lds_ae_set_volume( int volume )
 	{
 		snd_mixer_selem_set_capture_volume( elem, 0 , volume );
 		//fprintf( stdout, ">>>>> [%s:%d] set volume(%d)\n", __FILE__, __LINE__, volume);
+		snd_mixer_close(handle);
+		return 0;
 	}
 	else
 	{
 		fprintf( stderr, ">>>>> [%s:%d] find elem fail\n", __FILE__, __LINE__);
-	}
-	
-	snd_mixer_close(handle);
+		ptAudio->curr_err_state = LDS_AUDIO_ENCODE_SET_VOLUME_ERROR;
+		snd_mixer_close(handle);
+		return -1;
+	}	
 }
 
 /******************************************************************************
@@ -517,25 +931,30 @@ static void lds_ae_set_volume( int volume )
 * lds_ae_get_volume()
 *
 *******************************************************************************/
-static int lds_ae_get_volume( void)
+static int lds_audio_encode_get_volume(pLDS_AE_CTX ptAudio, int* volume)
 {
-	int volume = 0;
+	//int volume = 0;
 	long value;
 	snd_mixer_t *handle;
 	snd_mixer_selem_id_t *sid;
-	const char* card = "default";	
+	//const char* card = "default";	
 
-	if( bEnable == 0 )
-    {
-    	fprintf( stdout, "[%s:%d] you have to call NCL_AE_Init first time!\n", __FILE__, __LINE__ );
-    	return -1;
-    }
+	if(ptAudio->bEnable == 0 )
+	{
+		fprintf( stdout, "[%s:%d] you have to call NCL_AE_Init first time!\n", __FILE__, __LINE__ );
+
+		ptAudio->curr_err_state = LDS_AUDIO_ENCODE_GET_VOLUME_ERROR;
+		return -1;
+	}
 
 	if(ptAudio->vol_selem == NULL)
-		return volume;
+	{
+		ptAudio->curr_err_state = LDS_AUDIO_ENCODE_GET_VOLUME_ERROR;
+		return -1;
+	}
 	
 	snd_mixer_open(&handle, 0);
-	snd_mixer_attach(handle, card);
+	snd_mixer_attach(handle, ptAudio->device);
 	snd_mixer_selem_register(handle, NULL, NULL);
 	snd_mixer_load(handle);
 
@@ -547,17 +966,19 @@ static int lds_ae_get_volume( void)
 	if(elem)
 	{
 		snd_mixer_selem_get_capture_volume(elem, 0, &value);
-		volume = (int32_t)value;
+		*volume = (int32_t)value;
 		//fprintf( stdout, ">>>>> [%s:%d] get volume(%d)\n", __FILE__, __LINE__, volume);
 	}
 	else
 	{
 		fprintf( stderr, ">>>>> [%s:%d] find elem fail\n", __FILE__, __LINE__);
+		ptAudio->curr_err_state = LDS_AUDIO_ENCODE_GET_VOLUME_ERROR;
+		return -1;
 	}
 	
 	snd_mixer_close(handle);
 
-	return volume;
+	return 0;
 }
 
 /******************************************************************************
@@ -575,23 +996,29 @@ static int lds_ae_get_volume( void)
 * lds_ae_mute()
 *
 *******************************************************************************/
-static void lds_ae_mute( int mute )
+static int lds_audio_encode_mute(pLDS_AE_CTX ptAudio, int mute )
 {
 	snd_mixer_t *handle;
 	snd_mixer_selem_id_t *sid;
-	const char* card = "default";	
+	//const char* card = "default";	
 
-	if( bEnable == 0 )
-    {
-    	fprintf( stdout, "[%s:%d] you have to call NCL_AE_Init first time!\n", __FILE__, __LINE__ );
-    	return;
-    }
+	if( ptAudio->bEnable == 0 )
+	{
+		fprintf( stdout, "[%s:%d] you have to call NCL_AE_Init first time!\n", __FILE__, __LINE__ );
+		ptAudio->curr_err_state = LDS_AUDIO_ENCODE_MUTE_ERROR;
+		
+		return -1;
+	}
 
 	if(ptAudio->vol_mute_selem == NULL)
-		return;
+	{
+		ptAudio->curr_err_state = LDS_AUDIO_ENCODE_MUTE_ERROR;
+		
+		return -1;
+	}
 	
 	snd_mixer_open(&handle, 0);
-	snd_mixer_attach(handle, card);
+	snd_mixer_attach(handle, ptAudio->device);
 	snd_mixer_selem_register(handle, NULL, NULL);
 	snd_mixer_load(handle);
 
@@ -604,15 +1031,19 @@ static void lds_ae_mute( int mute )
 	{
 		snd_mixer_selem_set_capture_switch( elem, 0 , mute );
 		//fprintf( stdout, ">>>>> [%s:%d] Mute (%s)\n", __FILE__, __LINE__, mute?"ON":"OFF");
+		snd_mixer_close(handle);
+
+		return 0;
 	}
 	else
 	{
 		fprintf( stderr, ">>>>> [%s:%d] find elem fail\n", __FILE__, __LINE__);
+		ptAudio->curr_err_state = LDS_AUDIO_ENCODE_MUTE_ERROR;
+		snd_mixer_close(handle);
+		
+		return -1;
 	}
-	
-	snd_mixer_close(handle);
 }
-
 
 /******************************************************************************
 * @desc
@@ -629,7 +1060,7 @@ static void lds_ae_mute( int mute )
 * lds_ae_set_mixer_selem_value()
 *
 *******************************************************************************/
-static void lds_ae_set_mixer_selem_value( const char* selem_name, long value )
+static void lds_audio_encode_set_mixer_selem_value( const char* selem_name, long value )
 {
 	snd_mixer_t *handle;
 	snd_mixer_selem_id_t *sid;
@@ -678,7 +1109,7 @@ static void lds_ae_set_mixer_selem_value( const char* selem_name, long value )
 * lds_ae_get_mixer_selem_value()
 *
 *******************************************************************************/
-static long lds_ae_get_mixer_selem_value( const char* selem_name )
+static long lds_audio_encode_get_mixer_selem_value( const char* selem_name )
 {
 	long value = 0;
 	snd_mixer_t *handle;
@@ -732,7 +1163,7 @@ static long lds_ae_get_mixer_selem_value( const char* selem_name )
 * lds_ae_get_mixer_selem_range()
 *
 *******************************************************************************/
-static void lds_ae_get_mixer_selem_range( const char* selem_name, long* min, long* max )
+static void lds_audio_encode_get_mixer_selem_range( const char* selem_name, long* min, long* max )
 {
 	snd_mixer_t *handle;
 	snd_mixer_selem_id_t *sid;
@@ -782,7 +1213,7 @@ static void lds_ae_get_mixer_selem_range( const char* selem_name, long* min, lon
 * lds_ae_set_mixer_selem_switch()
 *
 *******************************************************************************/
-static void lds_ae_set_mixer_selem_switch( const char* selem_name, int value )
+static void lds_audio_encode_set_mixer_selem_switch( const char* selem_name, int value )
 {
 	snd_mixer_t *handle;
 	snd_mixer_selem_id_t *sid;
@@ -817,17 +1248,31 @@ static void lds_ae_set_mixer_selem_switch( const char* selem_name, int value )
 	snd_mixer_close(handle);
 }
 
+static int lds_audio_encode_get_error(void *ctx_t)
+{
+	if(NULL == ctx_t)
+	{
+		return -1;
+	}
+	else
+	{
+		pLDS_AE_CTX mic_ctx = (pLDS_AE_CTX)ctx_t;
+		return mic_ctx->curr_err_state;
+	}
+}
+
 struct LDS_AUDIO_MIC_OPERATION lds_hal_audio_mic = {
-    .name                   =     "lds_hal_audio_mic",
-    .comm.lds_hal_open      = lds_ae_open,
-    .comm.lds_hal_close     = lds_ae_close,
-    .comm.lds_hal_init      = lds_ae_init,
-    .comm.lds_hal_deinit    = lds_ae_deinit,
-    .comm.lds_hal_start     = lds_ae_start,
-    .comm.lds_hal_stop      = lds_ae_stop,
-    .lds_audio_mic_mute         = lds_ae_mute,
-    .lds_audio_mic_set_volume   = lds_ae_set_volume,
-    .lds_audio_mic_get_volume   = lds_ae_get_volume,
-    .lds_audio_mic_read         = lds_ae_read,
+    .name                   	= "lds_hal_audio_mic",
+    .base.lds_hal_open      	= lds_audio_encode_open,
+    .base.lds_hal_close     	= lds_audio_encode_close,
+    .base.lds_hal_start     	= lds_audio_encode_start,
+    .base.lds_hal_stop      	= lds_audio_encode_stop,
+    .base.lds_hal_get_error		= lds_audio_encode_get_error,
+    .lds_audio_mic_mute         = lds_audio_encode_mute,
+    .lds_audio_mic_set_volume   = lds_audio_encode_set_volume,
+    .lds_audio_mic_get_volume   = lds_audio_encode_get_volume,
+    .lds_audio_mic_per_frame_bytes = lds_audio_encode_per_frame_bytes,
+    .lds_audio_mic_read         = lds_audio_encode_read,
+    //.lds_audio_mic_read_ex      = lds_audio_encode_read_ex,
 };
 

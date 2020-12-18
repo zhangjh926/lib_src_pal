@@ -11,12 +11,12 @@ export BUILD_VERBOSE Q
 ifndef PROJ_HOME
 
 PROJ_HOME	= `pwd`
-TOP			= ../../
+TOP			=  $(OUTPUT_SAL_ROOT_PREFIX)
 
 CC		=	$(CROSS_TOOL)gcc
 LD		=	$(CROSS_TOOL)ld
 AR		=	$(CROSS_TOOL)ar cqs
-STRIP		=	$(CROSS_TOOL)strip
+STRIP	=	$(CROSS_TOOL)strip
 
 CP		=	@cp -f
 RM		=	@rm -f
@@ -25,10 +25,10 @@ ECHO	=	@echo
 CTAG	=	@ctags -R
 
 
-TARGET_DIR = $(TOP)/lib/
+TARGET_DIR = $(TOP)/SAL/lib/
 
-INCPATH   = -I./
-INCPATH  += -I$(TOP)/include
+INCPATH   = -I./ -I../
+INCPATH  += -I$(TOP)/SAL/include
 
 endif
 ########################################################
@@ -78,10 +78,10 @@ endif
 
 install:	$(TARGET)
 	$(CP)		$(TARGET) $(TARGET_DIR)
-	$(CP)		$(HEADERS) $(TOP)/include
-	@echo "Install.......	[OK]"
+	$(CP)		$(HEADERS) $(TOP)/SAL/include
+	@echo 		"Install.......	[OK]"
 
 clean:
-	$(RM)		$(OBJECTS) $(TARGET) *~ tags
+	$(RM)		$(OBJECTS) $(TARGET) *~ tags *.so *.a *.dpend
 	$(ECHO)		"Cleaning......   [OK]"
 

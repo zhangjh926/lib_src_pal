@@ -12,7 +12,7 @@ export BUILD_VERBOSE Q
 ifndef PROJ_HOME
 
 PROJ_HOME	= `pwd`
-TOP		= ../../../
+TOP		= 	$(OUTPUT_HAL_BASE_PREFIX)
 
 CC		=	$(CROSS_TOOL)gcc
 LD		=	$(CROSS_TOOL)ld
@@ -26,10 +26,10 @@ ECHO	=	@echo
 CTAG	=	@ctags -R
 
 
-TARGET_DIR = $(TOP)/lib/
+TARGET_DIR = $(TOP)/HAL/lib/
 
 INCPATH   = -I./
-INCPATH  += -I$(TOP)/include
+INCPATH  += -I$(TOP)/HAL/include
 INCPATH  += -I../../
 
 endif
@@ -39,6 +39,10 @@ TARGET	=	liblds_hal_led
 
 ########################################################
 #DEFINES += -DDEBUG
+
+#####################################################################
+# Is it a general module  #TRUE or FALSE
+COMMON_MODULE := FALSE
 
 ########################################################
 
@@ -52,11 +56,20 @@ $(warning $(SYSTEM) )
 $(warning $(PLATFORM) )
 ##########    Files    ##########
 ifeq ($(SYSTEM), LINUX)
-OBJECTS =	linux/liblds_hal_led_linux.o
+		ifeq ($(PLATFORM)_$(COMMON_MODULE), AMBA_FALSE)
+		OBJECTS +=	$(TOP)/../vendor/amba/linux/base/led/liblds_hal_led_amba.o
+		else ifeq ($(PLATFORM)_$(COMMON_MODULE), REALTEK_FALSE)
+		OBJECTS +=	$(TOP)/../vendor/realtek/linux/base/led/liblds_hal_led_amba.o
+		else ifeq ($(PLATFORM)_$(COMMON_MODULE), SIGMASTAR_FALSE)
+		OBJECTS +=	$(TOP)/../vendor/sigmastar/linux/base/led/liblds_hal_led_amba.o
+		else
+		OBJECTS +=	linux/liblds_hal_led_linux.o
+		endif
 else
-OBJECTS =	rtos/liblds_hal_led_rtos.o
+OBJECTS +=	rtos/liblds_hal_led_rtos.o
 endif
-
+$(warning $(PLATFORM)_$(COMMON_MODULE))
+$(warning $(OBJECTS) )
 HEADERS	=	liblds_hal_led_base.h \
 			
 
@@ -80,13 +93,14 @@ endif
 	$(Q)$(CC) 	-shared -o $(TARGET).so $(OBJECTS)
 
 install:	$(TARGET)
-	$(CP)		$(TARGET).a $(TARGET_DIR)
-	$(STRIP)		$(TARGET).so
+	#$(CP)		$(TARGET).a $(TARGET_DIR)
+	$(STRIP)	$(TARGET).so
 	$(CP)		$(TARGET).so $(TARGET_DIR)
-	$(CP)		$(HEADERS) $(TOP)/include
+	$(CP)		$(HEADERS) $(TOP)/HAL/include
+	$(CP)		$(OBJECTS) $(TOP)/HAL/obj
 	@echo 		"Install.......	[OK]"
 
 clean:
-	$(RM)		$(OBJECTS) $(TARGET) *~ tags
+	$(RM)		$(OBJECTS) $(TARGET) *~ tags *.so *.a *.dpend
 	$(ECHO)		"Cleaning......   [OK]"
 

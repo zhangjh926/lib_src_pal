@@ -7,6 +7,11 @@
 extern "C"{
 #endif
 
+typedef enum   _LDS_GPU_ErrorNo{
+	LDS_GPU_OPEN_ERROR,
+	LDS_GPU_INIT_ERROR,
+	LDS_GPU_START_ERROR,
+}LDS_GPU_ErrorNo;
 
 typedef enum tagCTRL_GPU
 {
@@ -16,12 +21,18 @@ typedef enum tagCTRL_GPU
 	LDS_CTRL_GPU_MAX
 }LDS_CTRL_GPU;
 
+typedef struct _LDS_GPU_CTX{
+	char dev_name[128];
+	int  dev_fd;
+    LDS_GPU_ErrorNo curr_err_state;
+}LDS_GPU_CTX;
+
 struct LDS_GPU_OPERATION
 {
-    struct  LDS_HAL_COMMON comm;    
-	const   char		*name;
+    struct  LDS_HAL_COMMON base;    
+	const   char		  *name;
 
-    int     (*ioctl)(LDS_CTRL_GPU, ...);
+    int     (*ioctl)(LDS_GPU_CTX *ctx, LDS_CTRL_GPU type, ...);
 };
 
 extern struct LDS_GPU_OPERATION lds_hal_gpu;

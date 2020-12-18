@@ -12,7 +12,7 @@ export BUILD_VERBOSE Q
 ifndef PROJ_HOME
 
 PROJ_HOME	= `pwd`
-TOP		= ../../../
+TOP		= 	$(OUTPUT_HAL_BASE_PREFIX)
 
 CC		=	$(CROSS_TOOL)gcc
 LD		=	$(CROSS_TOOL)ld
@@ -26,10 +26,10 @@ ECHO	=	@echo
 CTAG	=	@ctags -R
 
 
-TARGET_DIR = $(TOP)/lib/
+TARGET_DIR = $(TOP)/HAL/lib/
 
-INCPATH   = -I./
-INCPATH  += -I$(TOP)/include
+INCPATH   = -I./ -I../
+INCPATH  += -I$(TOP)/HAL/include
 INCPATH  += -I../../
 
 endif
@@ -53,7 +53,7 @@ $(warning $(PLATFORM) )
 ##########    Files    ##########
 ifeq ($(SYSTEM), LINUX)
 OBJECTS +=	linux/liblds_hal_key_gpio.o
-OBJECTS +=	linux/liblds_hal_key_dev.o
+# OBJECTS +=	linux/liblds_hal_key_dev.o
 else
 OBJECTS =	rtos/liblds_hal_key_rtos.o
 endif
@@ -81,13 +81,14 @@ endif
 	$(Q)$(CC) 	-shared -o $(TARGET).so $(OBJECTS)
 
 install:	$(TARGET)
-	$(CP)		$(TARGET).a $(TARGET_DIR)
-	$(STRIP)		$(TARGET).so
+	#$(CP)		$(TARGET).a $(TARGET_DIR)
+	$(STRIP)	$(TARGET).so
 	$(CP)		$(TARGET).so $(TARGET_DIR)
-	$(CP)		$(HEADERS) $(TOP)/include
+	$(CP)		$(HEADERS) $(TOP)/HAL/include
+	$(CP)		$(OBJECTS) $(TOP)/HAL/obj
 	@echo 		"Install.......	[OK]"
 
 clean:
-	$(RM)		$(OBJECTS) $(TARGET) *~ tags
+	$(RM)		$(OBJECTS) $(TARGET) *~ tags *.so *.a *.dpend
 	$(ECHO)		"Cleaning......   [OK]"
 

@@ -9,6 +9,12 @@ extern "C"{
 
 /* Header file include --------------------------------------------------*/
 
+typedef enum   _LDS_GYRO_ErrorNo{
+	LDS_GYRO_OPEN_ERROR,
+	LDS_GYRO_INIT_ERROR,
+	LDS_GYRO_START_ERROR,
+}LDS_DSP_ErrorNo;
+
 /* Define  --------------------------------------------------------------*/
 typedef enum tagRTC_CTRL
 {
@@ -17,13 +23,20 @@ typedef enum tagRTC_CTRL
 	LDS_CTRL_GYRO_MAX
 }LDS_CTRL_GYRO;
 
+typedef struct _LDS_GYRO_CTX
+{
+	char 			dev_name[64];
+	int 			dev_fd;
+	LDS_DSP_ErrorNo	curr_err_state;
+}LDS_GYRO_CTX;
+
 struct LDS_GYRO_OPERATION
 {
-    struct LDS_HAL_COMMON comm;
-	const char		*name;
+    struct LDS_HAL_COMMON base;
+	const char		     *name;
 
 	/* common function */
-	int				(*ioctl)		(LDS_CTRL_GYRO type, ...);
+	int				(*ioctl)		(LDS_GYRO_CTX *ctx_t, LDS_CTRL_GYRO type, ...);
 
 	/* component dependent fuction */
 };

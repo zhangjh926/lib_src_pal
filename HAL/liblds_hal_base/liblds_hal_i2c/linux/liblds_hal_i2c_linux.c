@@ -19,20 +19,10 @@
 #include "liblds_hal_i2c_base.h"
 
 /* Define  -------------------------------------------------------------------*/
-struct LDS_I2C_CTX
-{
-	int					slave_addr;
-	int					addr_register;
-	int					reg_length;
-	int					data_length;
-	char				reg_address[4];
-	char				i2c_name[12];
-};
-
 /* Define variable  ----------------------------------------------------------*/
 
 /* Define extern variable & function  ----------------------------------------*/
-struct LDS_I2C_CTX *ctx = NULL;
+static LDS_I2C_CTX *ctx = NULL;
 /* Function prototype  -------------------------------------------------------*/
 
 /* Function implementation  --------------------------------------------------*/
@@ -44,20 +34,21 @@ struct LDS_I2C_CTX *ctx = NULL;
 *	Modify			:
 *	warning			:
 ******************************************************************************/
-static int lds_i2c_open( char *dev_name)
+static int lds_hal_i2c_open( void *ctx_t, void *param)
 {
 	int ret = -1;
 	/* memory reset */
-	memset( ctx, 0, sizeof(struct LDS_I2C_CTX) );
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
 
 	ctx->slave_addr 	= -1;
 
 	//sprintf(ctx->i2c_name, "/dev/i2c-%d", 0);
-	strcpy(ctx->i2c_name, dev_name);
+	// strcpy(ctx->i2c_name, dev_name);
 
 	ctx->reg_length		= 1;
 	ctx->data_length	= 1;
-	//printf("..This device i2c-num is [%s]\n", ctx->i2c_name);
+	printf("..This device i2c-num is [%s]\n", ctx->i2c_name);
 	return 0;
 }
 
@@ -69,8 +60,11 @@ static int lds_i2c_open( char *dev_name)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_i2c_close( int dev_fd )
+static int lds_hal_i2c_close( void *ctx_t)
 {
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
+
 	return 0;
 }
 
@@ -81,10 +75,10 @@ static int lds_i2c_close( int dev_fd )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_i2c_init(void)
+static int lds_hal_i2c_init(void *param)
 {
-    ctx = (struct LDS_I2C_CTX *)malloc(sizeof(struct LDS_I2C_CTX));
-    return 0;
+    return 0;
+
 }
 
 /*******************************************************************************
@@ -94,12 +88,11 @@ static int lds_i2c_init(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_i2c_deinit(void)
+static int lds_hal_i2c_deinit(void *ctx_t)
 {
-    if(ctx){
-         free(ctx);
-         ctx = NULL;
-    }
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
+
     return 0;
 }
 
@@ -110,9 +103,13 @@ static int lds_i2c_deinit(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_i2c_start(void)
+static int lds_hal_i2c_start(void *ctx_t)
 {
-    return 0;
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
+
+    return 0;
+
 }
 
 /*******************************************************************************
@@ -122,8 +119,11 @@ static int lds_i2c_start(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_i2c_stop(void)
+static int lds_hal_i2c_stop(void *ctx_t)
 {
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
+
     return 0;
 }
 
@@ -134,7 +134,7 @@ static int lds_i2c_stop(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_i2c_read(int fd, void *data, unsigned int size )
+static int lds_hal_i2c_read(LDS_I2C_CTX *ctx, int fd, void *data, unsigned int size )
 {
 	int ret = -1;
 
@@ -163,7 +163,7 @@ static int lds_i2c_read(int fd, void *data, unsigned int size )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_i2c_write(int fd, void *data, unsigned int size )
+static int lds_hal_i2c_write(LDS_I2C_CTX *ctx, int fd, void *data, unsigned int size )
 {
 	int ret = -1;
 
@@ -194,9 +194,13 @@ static int lds_i2c_write(int fd, void *data, unsigned int size )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static unsigned int lds_i2c_read2(char *addr, int addr_len, char *buf, int buf_len )
+static unsigned int lds_hal_i2c_read2(LDS_I2C_CTX *ctx_t, char *addr, int addr_len, char *buf, int buf_len )
 {
 	int ret = -1;
+	LDS_I2C_CTX *ctx = NULL;
+
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
 
 	if(ctx->slave_addr < 0)
 	{
@@ -234,9 +238,13 @@ static unsigned int lds_i2c_read2(char *addr, int addr_len, char *buf, int buf_l
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static unsigned int lds_i2c_write2(char *buf, int buf_len )
+static unsigned int lds_hal_i2c_write2(LDS_I2C_CTX *ctx_t, char *buf, int buf_len )
 {
 	int ret = -1;
+	LDS_I2C_CTX *ctx = NULL;
+
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
 
 	if(ctx->slave_addr < 0)
 	{
@@ -277,13 +285,31 @@ static unsigned int lds_i2c_write2(char *buf, int buf_len )
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_i2c_control(LDS_CTRL_I2C type, ...)
+static 	int 	lds_hal_i2c_get_error(void *ctx_t)
+{
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
+
+	return ctx->curr_err_state;
+}
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int lds_hal_i2c_control(LDS_I2C_CTX *ctx_t, LDS_CTRL_I2C type, ...)
 {
 	int ret = -1;
-
+	LDS_I2C_CTX *ctx = NULL;
 	/* check maxctrl */
 	if (type >= LDS_CTRL_I2C_MAX)
 		return ret;
+
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
 
 	/* Parse multi param */
 	va_list ctrl;
@@ -363,7 +389,7 @@ static int lds_i2c_control(LDS_CTRL_I2C type, ...)
 				/* data */
 				memcpy( buf + buf_len, param, ctx->data_length);
 				buf_len += ctx->reg_length;
-				lds_i2c_write2(buf, buf_len);
+				lds_hal_i2c_write2(ctx, buf, buf_len);
 			}
 			break;
 
@@ -371,7 +397,7 @@ static int lds_i2c_control(LDS_CTRL_I2C type, ...)
 			{
 				char *param = va_arg(ctrl, char *);
 //				printf("reg_addr = [0x%x], reg_len = [%d], data_len = [%d] slave_addr[0x%x]\n", *(ctx->reg_address), ctx->reg_length,  ctx->data_length , ctx->slave_addr);
-				ret = lds_i2c_read2(ctx->reg_address, ctx->reg_length, param, ctx->data_length );
+				ret = lds_hal_i2c_read2(ctx, ctx->reg_address, ctx->reg_length, param, ctx->data_length );
 			}
 			break;
 			case LDS_CTRL_I2C_SET_I2CNUM:
@@ -397,16 +423,13 @@ static int lds_i2c_control(LDS_CTRL_I2C type, ...)
 }
 
 struct LDS_I2C_OPERATION lds_hal_i2c = {
-		.name			    = "lds_hal_i2c",
-		.ctxsize		    = sizeof(struct LDS_I2C_CTX),
-		.maxctrl		    = LDS_CTRL_I2C_MAX,
-		.comm.lds_hal_open	= lds_i2c_open,
-		.comm.lds_hal_close	= lds_i2c_close,
-		.comm.lds_hal_start = lds_i2c_start,
-		.comm.lds_hal_stop  = lds_i2c_stop,
-		.comm.lds_hal_init  = lds_i2c_init,
-		.comm.lds_hal_deinit= lds_i2c_deinit,
-		.read			    = lds_i2c_read,
-		.write			    = lds_i2c_write,
-		.ioctl			    = lds_i2c_control,
+		.name			    	= "lds_hal_i2c",
+		.base.lds_hal_open		= lds_hal_i2c_open,
+		.base.lds_hal_close		= lds_hal_i2c_close,
+		.base.lds_hal_start 	= lds_hal_i2c_start,
+		.base.lds_hal_stop  	= lds_hal_i2c_stop,
+		.base.lds_hal_get_error	= lds_hal_i2c_get_error,
+		.read			    	= lds_hal_i2c_read,
+		.write			    	= lds_hal_i2c_write,
+		.ioctl			    	= lds_hal_i2c_control,
 };

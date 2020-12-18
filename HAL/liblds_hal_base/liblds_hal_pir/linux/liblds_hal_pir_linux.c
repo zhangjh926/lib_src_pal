@@ -9,14 +9,8 @@
 
 
 /* Define  -------------------------------------------------------------------*/
-struct LDS_PIR_CTX
-{
-	void			*ctx;
-	char 		dev_name[64];
-};
-
 /* Define variable  ----------------------------------------------------------*/
-struct LDS_PIR_CTX *ctx = NULL;
+static LDS_PIR_CTX *ctx = NULL;
 /* Define extern variable & function  ----------------------------------------*/
 
 /* Function prototype  -------------------------------------------------------*/
@@ -29,9 +23,11 @@ struct LDS_PIR_CTX *ctx = NULL;
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int  lds_pir_open(char *dev_name)
+static int  lds_hal_pir_open(void *ctx_t, void *param)
 {
-	memset(ctx, 0, sizeof(struct LDS_PIR_CTX));
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
+
 	return 0;
 }
 
@@ -42,8 +38,11 @@ static int  lds_pir_open(char *dev_name)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int  lds_pir_close(int dev_fd)
+static int  lds_hal_pir_close(void *ctx_t)
 {
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
+
 	return 0;
 }
 
@@ -54,7 +53,37 @@ static int  lds_pir_close(int dev_fd)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int  lds_pir_start(void)
+static int  lds_hal_pir_start(void *ctx_t)
+{
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
+
+    return 0;
+}
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int lds_hal_pir_stop(void *ctx_t)
+{
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
+
+    return 0;
+}
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int  lds_hal_pir_init(void *param)
 {
     return 0;
 }
@@ -66,8 +95,11 @@ static int  lds_pir_start(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_pir_stop(void)
+static int lds_hal_pir_deinit(void *ctx_t)
 {
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
+
     return 0;
 }
 
@@ -78,26 +110,12 @@ static int lds_pir_stop(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int  lds_pir_init(void)
+static int lds_hal_pir_get_error(void *ctx_t)
 {
-    ctx = (struct LDS_PIR_CTX*)malloc(sizeof(struct LDS_PIR_CTX));
-    return 0;
-}
+	if(NULL == ctx_t) return -1;
+	else ctx = ctx_t;
 
-/*******************************************************************************
-*	Description		:
-*	Argurments		:
-*	Return value	:
-*	Modify			:
-*	warning			:
-*******************************************************************************/
-static int lds_pir_deinit(void)
-{
-    if(ctx){
-        free(ctx);
-        ctx = NULL;
-    }
-    return 0;
+    return ctx->curr_err_state;
 }
 
 
@@ -108,11 +126,12 @@ static int lds_pir_deinit(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int	lds_pir_control(LDS_CTRL_PIR type, ...)
+static int	lds_hal_pir_control(LDS_PIR_CTX *ctx, LDS_CTRL_PIR type, ...)
 {
 	/* check maxctrl */
 	if (type >= LDS_CTRL_PIR_MAX)
 		return -1;
+	if(NULL == ctx) return -1;
 
 	/* Parse multi param */
 	va_list ctrl;
@@ -148,11 +167,10 @@ static int	lds_pir_control(LDS_CTRL_PIR type, ...)
 
 struct LDS_PIR_OPERATION lds_hal_pir = {
 	.name 	                = "lds_hal_pir",
-	.comm.lds_hal_open      = lds_pir_open,
-	.comm.lds_hal_close	    = lds_pir_close,
-	.comm.lds_hal_start     = lds_pir_start,
-	.comm.lds_hal_stop      = lds_pir_stop,
-	.comm.lds_hal_init      = lds_pir_init,
-	.comm.lds_hal_deinit    = lds_pir_deinit,
-	.ioctl   	            = lds_pir_control,
+	.base.lds_hal_open      = lds_hal_pir_open,
+	.base.lds_hal_close	    = lds_hal_pir_close,
+	.base.lds_hal_start     = lds_hal_pir_start,
+	.base.lds_hal_stop      = lds_hal_pir_stop,
+	.base.lds_hal_get_error = lds_hal_pir_get_error,
+	.ioctl   	            = lds_hal_pir_control,
 };

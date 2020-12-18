@@ -7,7 +7,7 @@
 
 /* Define  -------------------------------------------------------------------*/
 /* Define variable  ----------------------------------------------------------*/
-
+static LDS_FPGA_CTX *ctx = NULL;
 /* Define extern variable & function  ----------------------------------------*/
 
 
@@ -19,8 +19,11 @@
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_fpga_open(char *dev_name)
+static int lds_hal_fpga_open(void *ctx_t,void *param)
 {
+    if(NULL == ctx_t) return -1;
+    else ctx = ctx_t;
+
     return 0;
 }
 
@@ -32,7 +35,22 @@ static int lds_hal_fpga_open(char *dev_name)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_fpga_close(int dev_fd)
+static int lds_hal_fpga_close(void *ctx_t)
+{
+    if(NULL == ctx_t) return -1;
+    else ctx = ctx_t;
+
+    return 0;
+}
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int lds_hal_fpga_init(void *param)
 {
     return 0;
 }
@@ -44,8 +62,11 @@ static int lds_hal_fpga_close(int dev_fd)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_fpga_init(void)
+static int lds_hal_fpga_deinit(void *ctx_t)
 {
+    if(NULL == ctx_t) return -1;
+    else ctx = ctx_t;
+
     return 0;
 }
 
@@ -56,8 +77,11 @@ static int lds_hal_fpga_init(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_fpga_deinit(void)
+static int lds_hal_fpga_start(void *ctx_t)
 {
+    if(NULL == ctx_t) return -1;
+    else ctx = ctx_t;
+
     return 0;
 }
 
@@ -68,9 +92,28 @@ static int lds_hal_fpga_deinit(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_fpga_start(void)
+static int lds_hal_fpga_stop(void *ctx_t)
 {
+    if(NULL == ctx_t) return -1;
+    else ctx = ctx_t;
+
     return 0;
+}
+
+
+/*******************************************************************************
+*	Description		:
+*	Argurments		:
+*	Return value	:
+*	Modify			:
+*	warning			:
+*******************************************************************************/
+static int lds_hal_fpga_get_error(void *ctx_t)
+{
+    if(NULL == ctx_t) return -1;
+    else ctx = ctx_t;
+
+    return ctx->curr_err_state;
 }
 
 /*******************************************************************************
@@ -80,22 +123,11 @@ static int lds_hal_fpga_start(void)
 *	Modify			:
 *	warning			:
 *******************************************************************************/
-static int lds_hal_fpga_stop(void)
+static int lds_hal_fpga_ioctl(LDS_FPGA_CTX *ctx ,LDS_CTRL_FPGA type, ...)
 {
-    return 0;
-}
+    if(NULL == ctx) return -1;
 
-/*******************************************************************************
-*	Description		:
-*	Argurments		:
-*	Return value	:
-*	Modify			:
-*	warning			:
-*******************************************************************************/
-static int lds_hal_fpga_ioctl(LDS_CTRL_FPGA type, ...)
-{
-	switch(type)
-	{
+	switch(type){
 		default:
 			break;
 	}
@@ -105,12 +137,11 @@ static int lds_hal_fpga_ioctl(LDS_CTRL_FPGA type, ...)
 
 
 struct LDS_FPGA_OPERATION lds_hal_fpga = {
-    .name               = "lds_hal_fpga",
-    .comm.lds_hal_open  = lds_hal_fpga_open,
-    .comm.lds_hal_close = lds_hal_fpga_close,
-    .comm.lds_hal_start = lds_hal_fpga_start,
-    .comm.lds_hal_stop  = lds_hal_fpga_stop,
-    .comm.lds_hal_init  = lds_hal_fpga_init,
-    .comm.lds_hal_deinit= lds_hal_fpga_deinit,
-    .ioctl              = lds_hal_fpga_ioctl,
+    .name                   = "lds_hal_fpga",
+    .base.lds_hal_open      = lds_hal_fpga_open,
+    .base.lds_hal_close     = lds_hal_fpga_close,
+    .base.lds_hal_start     = lds_hal_fpga_start,
+    .base.lds_hal_stop      = lds_hal_fpga_stop,
+    .base.lds_hal_get_error = lds_hal_fpga_get_error,
+    .ioctl                  = lds_hal_fpga_ioctl,
 };
